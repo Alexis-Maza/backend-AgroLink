@@ -1,4 +1,4 @@
 package AgroLink.AgroLink.persistance.entity;
 
-public class Categoria {
+public class Historial_Cultivo {
 }
