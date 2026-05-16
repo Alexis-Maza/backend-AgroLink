@@ -1,6 +1,8 @@
 package AgroLink.AgroLink.persistance.entity;
 
 
-public class Rol {
-
+public enum Rol {
+    AGRICULTOR,
+    COMPRADOR,
+    ADMIN
 }
