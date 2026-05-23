@@ -47,6 +47,10 @@ public class Usuario implements UserDetails {
     private String resetToken;
     private LocalDateTime resetTokenExpiration;
 
+    //Campos para verificar cuenta
+    private String codigoVerificacion;
+    private Boolean verificado = false;
+
     @PrePersist
     public void prePersist() {
         this.fechaRegistro = LocalDateTime.now();
