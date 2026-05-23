@@ -4,6 +4,7 @@ import AgroLink.AgroLink.persistance.entity.Usuario;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -11,7 +12,8 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String SECRET_KEY = "mi_clave_secreta_super_segura_2024";
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
     private final long EXPIRATION = 1000 * 60 * 60 * 24; // 24 horas
 
     public String generateToken(Usuario usuario) {

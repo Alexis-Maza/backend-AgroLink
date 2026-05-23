@@ -19,28 +19,47 @@ public class Usuario implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nombre;
+    private String nombres;
+
+    @Column(name = "apellido_paterno")
+    private String apellidoPaterno;
+
+    @Column(name = "apellido_materno")
+    private String apellidoMaterno;
 
     @Column(unique = true, nullable = false)
     private String email;
 
     private String password;
 
+    @Column(name = "foto_perfil")
+    private String fotoPerfil;
+
+    private Integer edad;
+
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro;
+
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
+    // Campos para recuperar contraseña
     private String resetToken;
     private LocalDateTime resetTokenExpiration;
 
+    @PrePersist
+    public void prePersist() {
+        this.fechaRegistro = LocalDateTime.now();
+    }
+
+    // UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(rol.name()));
     }
 
     @Override
-    public String getUsername() {
-        return email;
-    }
+    public String getUsername() { return email; }
 
     @Override
     public boolean isAccountNonExpired() { return true; }

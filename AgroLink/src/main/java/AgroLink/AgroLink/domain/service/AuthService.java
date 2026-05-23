@@ -21,22 +21,19 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(AuthRequest request) {
-        // Validar que no se registre como ADMIN
         if (request.getRol().equalsIgnoreCase("ADMIN")) {
             throw new RuntimeException("No puedes registrarte como ADMIN");
         }
 
-        // 1. Crear el usuario
         Usuario usuario = new Usuario();
-        usuario.setNombre(request.getNombre());
+        usuario.setNombres(request.getNombres());
+        usuario.setApellidoPaterno(request.getApellidoPaterno());
+        usuario.setApellidoMaterno(request.getApellidoMaterno());
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuario.setRol(Rol.valueOf(request.getRol()));
+        usuario.setRol(Rol.valueOf(request.getRol().toUpperCase()));
 
-        // 2. Guardarlo en la BD
         usuarioRepository.save(usuario);
-
-        // 3. Generar y devolver el token
         String token = jwtService.generateToken(usuario);
         return new AuthResponse(token);
     }

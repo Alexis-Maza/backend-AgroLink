@@ -34,6 +34,8 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider()) // ← línea nueva
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
+                        .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
