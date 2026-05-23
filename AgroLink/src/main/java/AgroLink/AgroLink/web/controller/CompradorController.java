@@ -1,4 +1,4 @@
-package AgroLink.AgroLink.web.controller;
+/*package AgroLink.AgroLink.web.controller;
 
 import AgroLink.AgroLink.domain.dto.CambiarPasswordRequest;
 import AgroLink.AgroLink.domain.dto.DatosPersonalesCompradorRequest;
@@ -43,4 +43,4 @@ public class CompradorController {
         compradorService.actualizarPerfilComercial(userDetails.getUsername(), request);
         return ResponseEntity.ok("Perfil comercial actualizado correctamente");
     }
-}
+} */

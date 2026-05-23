@@ -1,3 +1,4 @@
+/* 
 package AgroLink.AgroLink.web.controller;
 
 import AgroLink.AgroLink.domain.dto.CambiarPasswordRequest;
@@ -44,3 +45,4 @@ public class AgricultorController {
         return ResponseEntity.ok("Perfil agrícola actualizado correctamente");
     }
 }
+*/
