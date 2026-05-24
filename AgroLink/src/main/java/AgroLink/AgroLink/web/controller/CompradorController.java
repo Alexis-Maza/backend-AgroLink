@@ -1,8 +1,9 @@
-/*package AgroLink.AgroLink.web.controller;
+package AgroLink.AgroLink.web.controller;
 
 import AgroLink.AgroLink.domain.dto.CambiarPasswordRequest;
 import AgroLink.AgroLink.domain.dto.DatosPersonalesCompradorRequest;
 import AgroLink.AgroLink.domain.dto.PerfilComercialRequest;
+import AgroLink.AgroLink.domain.dto.PerfilCompradorResponse;
 import AgroLink.AgroLink.domain.service.CompradorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,4 +44,12 @@ public class CompradorController {
         compradorService.actualizarPerfilComercial(userDetails.getUsername(), request);
         return ResponseEntity.ok("Perfil comercial actualizado correctamente");
     }
-} */
+
+    @GetMapping("/perfil")
+    public ResponseEntity<PerfilCompradorResponse> obtenerPerfil(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(
+                compradorService.obtenerPerfil(userDetails.getUsername())
+        );
+    }
+}
