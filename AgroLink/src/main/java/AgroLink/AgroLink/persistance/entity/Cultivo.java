@@ -13,7 +13,7 @@ public class Cultivo {
     @Column(name = "fecha_inicio")
     private LocalDate fechaInicio;
 
-    @Column(name = "area_sembrada", precision = 10, scale = 2)
+    @Column(name = "area_sembrada")
     private Double areaSembrada;
 
     // Relación con el Agricultor (Muchos cultivos pertenecen a un Agricultor)

@@ -11,13 +11,13 @@ public class DetallePedido {
     @Column(name = "id_detalle_pedido")
     private Long idDetallePedido;
 
-    @Column(name = "cantidad_solicitada", precision = 10, scale = 2)
+    @Column(name = "cantidad_solicitada")
     private Double cantidadSolicitada;
 
-    @Column(name = "precio_pactado", precision = 10, scale = 2)
+    @Column(name = "precio_pactado")
     private Double precioPactado;
 
-    @Column(name = "cantidad_entrega", precision = 10, scale = 2)
+    @Column(name = "cantidad_entrega")
     private Double cantidadEntrega;
 
     @Column(name = "direccion", length = 255)

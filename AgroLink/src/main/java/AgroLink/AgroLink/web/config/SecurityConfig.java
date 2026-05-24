@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider()) // ← línea nueva
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
                         .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
                         .anyRequest().authenticated()
