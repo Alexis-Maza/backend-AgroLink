@@ -32,7 +32,7 @@ public class Usuario implements UserDetails {
 
     private String password;
 
-    @Column(name = "foto_perfil")
+    @Column(name = "foto_perfil", columnDefinition = "TEXT")
     private String fotoPerfil;
 
     private Integer edad;
