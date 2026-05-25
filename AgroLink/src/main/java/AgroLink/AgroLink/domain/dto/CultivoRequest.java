@@ -22,4 +22,12 @@ public class CultivoRequest {
 
     // Días totales estimados para todo el ciclo del cultivo
     private Integer diasTotalesEstimados;
+
+    // Campos nuevos
+    private String lote;
+    private BigDecimal precio;
+    private BigDecimal minimoVenta;
+    private BigDecimal cantidadEstimada;
+    private String unidad;
+    private String imagenUrl;
 }

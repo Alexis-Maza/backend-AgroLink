@@ -35,6 +35,27 @@ public class Cultivo {
     @Column(name = "disponible", nullable = false)
     private Boolean disponible = false;
 
+    @Column(name = "lote", length = 50)
+    private String lote;
+
+    @Column(name = "precio", precision = 10, scale = 2)
+    private BigDecimal precio;
+
+    @Column(name = "minimo_venta", precision = 10, scale = 2)
+    private BigDecimal minimoVenta;
+
+    @Column(name = "cantidad_estimada", precision = 10, scale = 2)
+    private BigDecimal cantidadEstimada;
+
+    @Column(name = "cantidad_disponible", precision = 10, scale = 2)
+    private BigDecimal cantidadDisponible;
+
+    @Column(name = "unidad", length = 20)
+    private String unidad;
+
+    @Column(name = "imagen_url", length = 500)
+    private String imagenUrl;
+
     // --- Relaciones ---
 
     // Agricultor propietario del cultivo (relación con Dev 1)

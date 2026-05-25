@@ -52,6 +52,13 @@ public class CultivoService {
         cultivo.setAgricultor(agricultor);
         cultivo.setEstadoCultivo(estado);
         cultivo.setDisponible(estadoNombre.equals("Listo para cosechar"));
+        cultivo.setLote(request.getLote());
+        cultivo.setPrecio(request.getPrecio());
+        cultivo.setMinimoVenta(request.getMinimoVenta());
+        cultivo.setCantidadEstimada(request.getCantidadEstimada());
+        cultivo.setCantidadDisponible(request.getCantidadEstimada());
+        cultivo.setUnidad(request.getUnidad());
+        cultivo.setImagenUrl(request.getImagenUrl());
 
         if (request.getIdProductoVariedad() != null) {
             Producto_Variedad pv = new Producto_Variedad();
@@ -95,6 +102,12 @@ public class CultivoService {
 
         cultivo.setFechaSiembra(request.getFechaSiembra());
         cultivo.setAreaSembrada(request.getAreaSembrada());
+        if (request.getLote() != null) cultivo.setLote(request.getLote());
+        if (request.getPrecio() != null) cultivo.setPrecio(request.getPrecio());
+        if (request.getMinimoVenta() != null) cultivo.setMinimoVenta(request.getMinimoVenta());
+        if (request.getCantidadEstimada() != null) cultivo.setCantidadEstimada(request.getCantidadEstimada());
+        if (request.getUnidad() != null) cultivo.setUnidad(request.getUnidad());
+        if (request.getImagenUrl() != null) cultivo.setImagenUrl(request.getImagenUrl());
         if (request.getDiasTotalesEstimados() != null) {
             cultivo.setDiasTotalesEstimados(request.getDiasTotalesEstimados());
         }
@@ -319,14 +332,20 @@ public class CultivoService {
                 cultivo.getId(),
                 cultivo.getFechaSiembra(),
                 cultivo.getAreaSembrada(),
-                cultivo.getEstadoCultivo() != null
-                        ? cultivo.getEstadoCultivo().getDescripcionEstadoCultivo()
-                        : null,
+                cultivo.getEstadoCultivo() != null ? cultivo.getEstadoCultivo().getDescripcionEstadoCultivo() : null,
                 alertaRetraso,
                 cultivo.getProductoVariedad() != null ? cultivo.getProductoVariedad().getId() : null,
                 cultivo.getProductoVariedad() != null ? cultivo.getProductoVariedad().getNombreProductosVariedad() : null,
                 cultivo.getDiasTotalesEstimados(),
-                cultivo.getDisponible()
+                cultivo.getDisponible(),
+                // Campos nuevos
+                cultivo.getLote(),
+                cultivo.getPrecio(),
+                cultivo.getMinimoVenta(),
+                cultivo.getCantidadEstimada(),
+                cultivo.getCantidadDisponible(),
+                cultivo.getUnidad(),
+                cultivo.getImagenUrl()
         );
     }
 

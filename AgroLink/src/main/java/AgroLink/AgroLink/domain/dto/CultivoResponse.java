@@ -32,4 +32,13 @@ public class CultivoResponse {
 
     // Disponibilidad en catálogo
     private Boolean disponible;
+
+    // Campos nuevos
+    private String lote;
+    private BigDecimal precio;
+    private BigDecimal minimoVenta;
+    private BigDecimal cantidadEstimada;
+    private BigDecimal cantidadDisponible;
+    private String unidad;
+    private String imagenUrl;
 }
