@@ -48,7 +48,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 5. Extraer el email y buscar el usuario
         String email = jwtService.extractEmail(token);
-        UserDetails usuario = usuarioRepository.findByEmail(email).orElseThrow();
+        var usuarioOptional = usuarioRepository.findByEmail(email);
+
+        if (usuarioOptional.isEmpty()) {
+            // Si el usuario ya no existe en la BD (token viejo/fantasma), ignoramos el token
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        UserDetails usuario = usuarioOptional.get();
 
         // 6. Registrar al usuario como autenticado en Spring
         UsernamePasswordAuthenticationToken authToken =

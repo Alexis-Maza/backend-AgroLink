@@ -2,6 +2,8 @@ package AgroLink.AgroLink.persistance.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "pedido")
@@ -23,6 +25,9 @@ public class Pedido {
     @JoinColumn(name = "id_estado_pedido", nullable = false)
     private Estado_Pedido estadoPedido;
 
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DetallePedido> detalles = new ArrayList<>();
+
     // Constructor vacío
     public Pedido() {}
 
@@ -38,4 +43,7 @@ public class Pedido {
 
     public Estado_Pedido getEstadoPedido() { return estadoPedido; }
     public void setEstadoPedido(Estado_Pedido estadoPedido) { this.estadoPedido = estadoPedido; }
+
+    public List<DetallePedido> getDetalles() { return detalles; }
+    public void setDetalles(List<DetallePedido> detalles) { this.detalles = detalles; }
 }

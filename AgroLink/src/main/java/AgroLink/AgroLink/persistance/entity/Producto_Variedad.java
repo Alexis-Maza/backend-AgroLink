@@ -12,6 +12,9 @@ public class Producto_Variedad {
     @Column(name = "nombre_producto_variedad", length = 100)
     private String nombreProductoVariedad;
 
+    @Column(name = "precio_producto_variedad")
+    private Double precioProductoVariedad;
+
     @ManyToOne
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
@@ -25,6 +28,9 @@ public class Producto_Variedad {
 
     public String getNombreProductoVariedad() { return nombreProductoVariedad; }
     public void setNombreProductoVariedad(String nombreProductoVariedad) { this.nombreProductoVariedad = nombreProductoVariedad; }
+
+    public Double getPrecioProductoVariedad() { return precioProductoVariedad; }
+    public void setPrecioProductoVariedad(Double precioProductoVariedad) { this.precioProductoVariedad = precioProductoVariedad; }
 
     public Producto getProducto() { return producto; }
     public void setProducto(Producto producto) { this.producto = producto; }
