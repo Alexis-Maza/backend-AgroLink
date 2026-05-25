@@ -42,6 +42,17 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
                         .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
+                        .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")
+                        .requestMatchers("/cultivos/disponibles").hasAuthority("COMPRADOR")
+                        .requestMatchers("/alertas/**").hasAuthority("AGRICULTOR")
+                         // Permitir Swagger sin autenticación
+                        .requestMatchers(
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/v3/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
