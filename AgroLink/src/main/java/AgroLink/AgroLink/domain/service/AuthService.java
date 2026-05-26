@@ -2,7 +2,11 @@ package AgroLink.AgroLink.domain.service;
 
 import AgroLink.AgroLink.domain.dto.AuthRequest;
 import AgroLink.AgroLink.domain.dto.AuthResponse;
+import AgroLink.AgroLink.domain.repository.AgricultorRepository;
+import AgroLink.AgroLink.domain.repository.CompradorRepository;
 import AgroLink.AgroLink.domain.repository.UsuarioRepository;
+import AgroLink.AgroLink.persistance.entity.Agricultor;
+import AgroLink.AgroLink.persistance.entity.Comprador;
 import AgroLink.AgroLink.persistance.entity.Rol;
 import AgroLink.AgroLink.persistance.entity.Usuario;
 import jakarta.mail.MessagingException;
@@ -21,6 +25,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final AgricultorRepository agricultorRepository;
+    private final CompradorRepository compradorRepository;
 
     public String register(AuthRequest request) {
         if (request.getRol().equalsIgnoreCase("ADMIN")) {
@@ -65,12 +71,27 @@ public class AuthService {
             throw new RuntimeException("Código incorrecto");
         }
 
-        // Marcar como verificado y limpiar código
         usuario.setVerificado(true);
         usuario.setCodigoVerificacion(null);
         usuarioRepository.save(usuario);
 
-        // Ahora sí generar el token
+        // Crear perfil según rol
+        if (usuario.getRol() == Rol.AGRICULTOR) {
+            boolean yaExiste = agricultorRepository.findByUsuario(usuario).isPresent();
+            if (!yaExiste) {
+                Agricultor agricultor = new Agricultor();
+                agricultor.setUsuario(usuario);
+                agricultorRepository.save(agricultor);
+            }
+        } else if (usuario.getRol() == Rol.COMPRADOR) {
+            boolean yaExiste = compradorRepository.findByUsuario(usuario).isPresent();
+            if (!yaExiste) {
+                Comprador comprador = new Comprador();
+                comprador.setUsuario(usuario);
+                compradorRepository.save(comprador);
+            }
+        }
+
         String token = jwtService.generateToken(usuario);
         return new AuthResponse(token);
     }

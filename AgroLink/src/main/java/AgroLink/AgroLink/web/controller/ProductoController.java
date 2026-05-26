@@ -1,32 +1,41 @@
 package AgroLink.AgroLink.web.controller;
 
+import AgroLink.AgroLink.domain.dto.ProductoResponse;
+import AgroLink.AgroLink.domain.dto.ProductoVariedadResponse;
+import AgroLink.AgroLink.domain.repository.ProductoRepository;
+import AgroLink.AgroLink.domain.repository.ProductoVariedadRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Arrays;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/productos")
+@RequestMapping("/productos")
+@RequiredArgsConstructor
 public class ProductoController {
 
-    @GetMapping("/listado")
-    public ResponseEntity<List<String>> getListadoCompleto() {
-        return ResponseEntity.ok(generarListaSimulada());
+    private final ProductoRepository productoRepository;
+    private final ProductoVariedadRepository productoVariedadRepository;
+
+    @GetMapping
+    public ResponseEntity<List<ProductoResponse>> listarProductos() {
+        List<ProductoResponse> productos = productoRepository.findAll()
+                .stream()
+                .map(p -> new ProductoResponse(p.getId(), p.getNombre()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(productos);
     }
 
-    @GetMapping("/categoria/{nombre}")
-    public ResponseEntity<List<String>> getPorCategoria(@PathVariable String nombre) {
-        // Lógica para filtrar (simulada)
-        return ResponseEntity.ok(generarListaSimulada());
-    }
-
-    @GetMapping("/detalle/{id}")
-    public ResponseEntity<String> getDetalle(@PathVariable Long id) {
-        return ResponseEntity.ok("Información técnica del producto: " + id);
-    }
-
-    // Método privado para mejorar la mantenibilidad y encapsular la lógica de datos
-    private List<String> generarListaSimulada() {
-        return Arrays.asList("Frutas de temporada", "Hortalizas frescas", "Semillas");
+    @GetMapping("/{idProducto}/variedades")
+    public ResponseEntity<List<ProductoVariedadResponse>> listarVariedades(
+            @PathVariable Long idProducto) {
+        List<ProductoVariedadResponse> variedades = productoVariedadRepository
+                .findByProductoId(idProducto)
+                .stream()
+                .map(v -> new ProductoVariedadResponse(v.getId(), v.getNombreProductosVariedad()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(variedades);
     }
 }
