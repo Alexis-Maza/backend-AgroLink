@@ -40,11 +40,12 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/productos/**").permitAll()
+                        .requestMatchers("/cultivos/disponibles").hasAuthority("COMPRADOR") // ← primero la específica
+                        .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")         // ← luego la general
                         .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
                         .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
-                        .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")
-                        .requestMatchers("/cultivos/disponibles").hasAuthority("COMPRADOR")
-                        .requestMatchers("/alertas/**").hasAuthority("AGRICULTOR")
+
                          // Permitir Swagger sin autenticación
                         .requestMatchers(
                             "/swagger-ui/**",

@@ -1,9 +1,6 @@
 package AgroLink.AgroLink.domain.service;
 
-import AgroLink.AgroLink.domain.dto.CultivoRequest;
-import AgroLink.AgroLink.domain.dto.CultivoResponse;
-import AgroLink.AgroLink.domain.dto.HistorialCultivoRequest;
-import AgroLink.AgroLink.domain.dto.HistorialCultivoResponse;
+import AgroLink.AgroLink.domain.dto.*;
 import AgroLink.AgroLink.domain.repository.AgricultorRepository;
 import AgroLink.AgroLink.domain.repository.CultivoRepository;
 import AgroLink.AgroLink.domain.repository.EtapaProductoVariedadRepository;
@@ -15,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -413,5 +411,24 @@ public class CultivoService {
                 .stream()
                 .map(this::mapearCultivoAResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public CultivoResponse registrarMerma(Long idCultivo, String email, MermaRequest request) {
+        Cultivo cultivo = cultivoRepository.findById(idCultivo)
+                .orElseThrow(() -> new RuntimeException("Cultivo no encontrado"));
+        validarPropietario(cultivo, email);
+
+        // Validar que la cantidad perdida no sea mayor al stock disponible
+        if (request.getCantidadPerdida().compareTo(cultivo.getCantidadDisponible()) > 0) {
+            throw new RuntimeException("La cantidad perdida no puede ser mayor al stock disponible");
+        }
+
+        // Restar la merma del stock disponible
+        BigDecimal nuevoStock = cultivo.getCantidadDisponible()
+                .subtract(request.getCantidadPerdida());
+        cultivo.setCantidadDisponible(nuevoStock);
+
+        return mapearCultivoAResponse(cultivoRepository.save(cultivo));
     }
 }

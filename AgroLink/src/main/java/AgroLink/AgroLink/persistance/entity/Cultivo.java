@@ -53,7 +53,7 @@ public class Cultivo {
     @Column(name = "unidad", length = 20)
     private String unidad;
 
-    @Column(name = "imagen_url", length = 500)
+    @Column(name = "imagen_url", columnDefinition = "TEXT")
     private String imagenUrl;
 
     // --- Relaciones ---
