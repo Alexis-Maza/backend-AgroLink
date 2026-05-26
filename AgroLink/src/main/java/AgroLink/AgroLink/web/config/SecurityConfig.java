@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/public/**").permitAll() 
                         .requestMatchers("/productos/**").permitAll()
                         .requestMatchers("/cultivos/disponibles").hasAuthority("COMPRADOR") // ← primero la específica
                         .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")         // ← luego la general
