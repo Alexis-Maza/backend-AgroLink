@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll() 
                         .requestMatchers("/productos/**").permitAll()
+                        .requestMatchers("/reportes/mis-cultivos/**", "/reportes/mis-ventas/**").hasAuthority("AGRICULTOR")
+                        .requestMatchers("/reportes/mis-compras/**").hasAuthority("COMPRADOR")
                         .requestMatchers("/cultivos/disponibles").hasAuthority("COMPRADOR") // ← primero la específica
                         .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")         // ← luego la general
                         .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
@@ -55,6 +57,7 @@ public class SecurityConfig {
                             "/swagger-resources/**",
                             "/webjars/**"
                         ).permitAll()
+                        
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
