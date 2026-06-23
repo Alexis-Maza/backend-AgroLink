@@ -32,7 +32,7 @@ public class ProductoController {
     public ResponseEntity<List<ProductoVariedadResponse>> listarVariedades(
             @PathVariable Long idProducto) {
         List<ProductoVariedadResponse> variedades = productoVariedadRepository
-                .findByProductoId(idProducto)
+                .findByProductoIdAndActivoTrue(idProducto) // ← cambiar esto
                 .stream()
                 .map(v -> new ProductoVariedadResponse(v.getId(), v.getNombreProductosVariedad()))
                 .collect(Collectors.toList());

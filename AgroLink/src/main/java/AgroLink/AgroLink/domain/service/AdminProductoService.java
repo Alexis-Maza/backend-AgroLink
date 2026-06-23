@@ -49,6 +49,13 @@ public class AdminProductoService {
         productoRepository.deleteById(id);
     }
 
+    public ProductoVariedadDTO toggleEstadoVariante(Long id) {
+        Producto_Variedad variedad = productoVariedadRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Variante no encontrada con id: " + id));
+        variedad.setActivo(!variedad.isActivo());
+        return toVariedadDTO(productoVariedadRepository.save(variedad));
+    }
+
     // ─── VARIANTES ────────────────────────────────────────────────
 
     public List<ProductoVariedadDTO> listarVariantesPorProducto(Long idProducto) {
@@ -70,6 +77,7 @@ public class AdminProductoService {
         Producto_Variedad variedad = new Producto_Variedad();
         variedad.setNombreProductosVariedad(request.getNombreProductosVariedad());
         variedad.setProducto(producto);
+        variedad.setActivo(true);
 
         return toVariedadDTO(productoVariedadRepository.save(variedad));
     }
@@ -118,6 +126,7 @@ public class AdminProductoService {
         ProductoVariedadDTO dto = new ProductoVariedadDTO();
         dto.setId(v.getId());
         dto.setNombreProductosVariedad(v.getNombreProductosVariedad());
+        dto.setActivo(v.isActivo());
         if (v.getProducto() != null) {
             dto.setIdProducto(v.getProducto().getId());
             dto.setNombreProducto(v.getProducto().getNombre());

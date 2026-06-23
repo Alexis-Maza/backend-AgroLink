@@ -8,4 +8,5 @@ public class ProductoVariedadDTO {
     private String nombreProductosVariedad;
     private Long idProducto;
     private String nombreProducto;
+    private boolean activo;
 }

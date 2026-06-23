@@ -80,4 +80,9 @@ public class AdminProductoController {
         adminProductoService.eliminarVariante(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/productos/variantes/{id}/toggle-estado")
+    public ResponseEntity<ProductoVariedadDTO> toggleEstadoVariante(@PathVariable Long id) {
+        return ResponseEntity.ok(adminProductoService.toggleEstadoVariante(id));
+    }
 }
