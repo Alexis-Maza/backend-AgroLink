@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")         // ← luego la general
                         .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
                         .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
                          // Permitir Swagger sin autenticación
                         .requestMatchers(
