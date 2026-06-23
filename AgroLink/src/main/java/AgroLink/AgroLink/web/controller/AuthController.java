@@ -41,4 +41,9 @@ public class AuthController {
     public ResponseEntity<AuthResponse> verifyEmail(@RequestBody VerifyEmailRequest request) {
         return ResponseEntity.ok(authService.verifyEmail(request.getEmail(), request.getCodigo()));
     }
+
+    @PostMapping("/register-admin")
+    public ResponseEntity<String> registerAdmin(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.registerAdmin(request));
+    }
 }

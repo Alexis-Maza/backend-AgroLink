@@ -5,6 +5,7 @@ import AgroLink.AgroLink.persistance.entity.Cultivo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -14,5 +15,11 @@ public interface CultivoRepository extends JpaRepository<Cultivo, Long>,
     List<Cultivo> findByAgricultorOrderByFechaSiembraDesc(Agricultor agricultor);
     List<Cultivo> findByEstadoCultivoDescripcionEstadoCultivoIn(
         java.util.Collection<String> descripciones);
+    List<Cultivo> findByEstadoCultivoDescripcionEstadoCultivoNotIn(
+        java.util.Collection<String> descripciones);
     List<Cultivo> findByDisponibleTrue();
+
+    // Métodos para reportes
+    List<Cultivo> findByAgricultorAndFechaSiembraBetween(
+            Agricultor agricultor, LocalDate fechaInicio, LocalDate fechaFin);
 }

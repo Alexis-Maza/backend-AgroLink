@@ -4,6 +4,7 @@ import AgroLink.AgroLink.domain.dto.PedidoRequestDTO;
 import AgroLink.AgroLink.domain.dto.PedidoResponseDTO;
 import AgroLink.AgroLink.domain.repository.*;
 import AgroLink.AgroLink.persistance.entity.*;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class CatalogoPedidoService {
     private final UsuarioRepository usuarioRepository;
     private final CompradorRepository compradorRepository;
     private final UnidadMedidaProductoRepository unidadMedidaProductoRepository;
+    private final EmailService emailService;
 
     // ── Catálogo con filtros ──────────────────────────────────────────────
 
@@ -91,6 +93,31 @@ public class CatalogoPedidoService {
             );
             cultivoRepository.save(cultivo);
 
+            // Evaluar si stock bajo a minimo y enviar alerta inmediata
+            if (esStockMinimo(cultivo)) {
+                try {
+                    String nombreAgricultor = cultivo.getAgricultor().getUsuario().getNombres();
+                    String emailAgricultor = cultivo.getAgricultor().getUsuario().getEmail();
+                    String lote = cultivo.getLote() != null ? cultivo.getLote() : "Sin lote";
+                    String producto = cultivo.getProductoVariedad().getNombreProductosVariedad();
+                    String unidad = cultivo.getUnidad() != null ? cultivo.getUnidad() : "";
+
+                    emailService.sendAlertaStockMinimo(
+                            emailAgricultor,
+                            nombreAgricultor != null ? nombreAgricultor : "Agricultor",
+                            lote,
+                            producto,
+                            cultivo.getCantidadDisponible().toPlainString(),
+                            cultivo.getMinimoVenta().toPlainString(),
+                            unidad
+                    );
+                    System.out.println("[CatalogoPedidoService] Alerta stock minimo enviada a " + emailAgricultor
+                            + " para cultivo ID: " + cultivo.getId());
+                } catch (MessagingException ex) {
+                    System.err.println("[CatalogoPedidoService] Error enviando alerta stock: " + ex.getMessage());
+                }
+            }
+
             // Crear detalle
             DetallePedido detalle = new DetallePedido();
             detalle.setPedido(pedido);
@@ -130,5 +157,17 @@ public class CatalogoPedidoService {
                 pedido.getEstadoPedido().getDescripcionEstadoPedido(),
                 detallesDTO
         );
+    }
+
+    // ── Helpers para alertas ───────────────────────────────────────────────
+
+    private boolean esStockMinimo(Cultivo cultivo) {
+        BigDecimal disponible = cultivo.getCantidadDisponible();
+        BigDecimal minimo = cultivo.getMinimoVenta();
+
+        return disponible != null
+                && minimo != null
+                && disponible.compareTo(BigDecimal.ZERO) >= 0
+                && disponible.compareTo(minimo) <= 0;
     }
 }

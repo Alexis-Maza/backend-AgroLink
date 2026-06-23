@@ -11,6 +11,7 @@ import AgroLink.AgroLink.persistance.entity.Rol;
 import AgroLink.AgroLink.persistance.entity.Usuario;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -114,5 +115,23 @@ public class AuthService {
 
         String token = jwtService.generateToken(usuario);
         return new AuthResponse(token);
+    }
+
+    public String registerAdmin(AuthRequest request) {
+        if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("El email ya está registrado");
+        }
+
+        Usuario usuario = new Usuario();
+        usuario.setNombres(request.getNombres());
+        usuario.setApellidoPaterno(request.getApellidoPaterno());
+        usuario.setApellidoMaterno(request.getApellidoMaterno());
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        usuario.setRol(Rol.ADMIN);
+        usuario.setVerificado(true); // Admin no necesita verificar email
+        usuarioRepository.save(usuario);
+
+        return "Admin creado correctamente";
     }
 }

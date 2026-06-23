@@ -42,10 +42,13 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll() 
                         .requestMatchers("/productos/**").permitAll()
+                        .requestMatchers("/reportes/mis-cultivos/**", "/reportes/mis-ventas/**").hasAuthority("AGRICULTOR")
+                        .requestMatchers("/reportes/mis-compras/**").hasAuthority("COMPRADOR")
                         .requestMatchers("/cultivos/disponibles").hasAuthority("COMPRADOR") // ← primero la específica
                         .requestMatchers("/cultivos/**").hasAuthority("AGRICULTOR")         // ← luego la general
                         .requestMatchers("/agricultor/**").hasAuthority("AGRICULTOR")
                         .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
                         .requestMatchers("/ws-agrolink/**").permitAll()
 
@@ -60,6 +63,7 @@ public class SecurityConfig {
                             "/swagger-resources/**",
                             "/webjars/**"
                         ).permitAll()
+                        
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -70,7 +74,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

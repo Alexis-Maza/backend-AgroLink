@@ -5,6 +5,7 @@ import AgroLink.AgroLink.domain.dto.DashboardResumenResponse;
 import AgroLink.AgroLink.domain.dto.DatosPersonalesRequest;
 import AgroLink.AgroLink.domain.dto.PerfilAgricolaRequest;
 import AgroLink.AgroLink.domain.dto.PerfilAgricultorResponse;
+import AgroLink.AgroLink.domain.dto.VentaAgricultorDTO;
 import AgroLink.AgroLink.domain.service.AgricultorService;
 import AgroLink.AgroLink.domain.service.DashboardService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/agricultor")
@@ -69,5 +72,9 @@ public class AgricultorController {
         return ResponseEntity.ok(
                 dashboardService.obtenerDashboard(userDetails.getUsername())
         );
+    @GetMapping("/ventas")
+    public ResponseEntity<List<VentaAgricultorDTO>> obtenerVentas(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(agricultorService.obtenerVentas(userDetails.getUsername()));
     }
 }
