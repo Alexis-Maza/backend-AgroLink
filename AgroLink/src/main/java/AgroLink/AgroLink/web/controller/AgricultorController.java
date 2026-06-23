@@ -1,10 +1,12 @@
 package AgroLink.AgroLink.web.controller;
 
 import AgroLink.AgroLink.domain.dto.CambiarPasswordRequest;
+import AgroLink.AgroLink.domain.dto.DashboardResumenResponse;
 import AgroLink.AgroLink.domain.dto.DatosPersonalesRequest;
 import AgroLink.AgroLink.domain.dto.PerfilAgricolaRequest;
 import AgroLink.AgroLink.domain.dto.PerfilAgricultorResponse;
 import AgroLink.AgroLink.domain.service.AgricultorService;
+import AgroLink.AgroLink.domain.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class AgricultorController {
 
     private final AgricultorService agricultorService;
+    private final DashboardService  dashboardService;
 
     @PutMapping("/datos-personales")
     public ResponseEntity<String> actualizarDatosPersonales(
@@ -50,6 +53,21 @@ public class AgricultorController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(
                 agricultorService.obtenerPerfil(userDetails.getUsername())
+        );
+    }
+
+    /**
+     * GET /agricultor/dashboard
+     * Devuelve las métricas clave del panel de control del agricultor autenticado:
+     * conteo de cultivos por estado, volumen disponible y ventas del mes.
+     *
+     * Protegido por SecurityConfig: requiere rol AGRICULTOR.
+     */
+    @GetMapping("/dashboard")
+    public ResponseEntity<DashboardResumenResponse> obtenerDashboard(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(
+                dashboardService.obtenerDashboard(userDetails.getUsername())
         );
     }
 }
