@@ -86,6 +86,11 @@
 			<version>2.6.0</version>
 		</dependency>
 
+		<!-- WebSocket + STOMP (tiempo real) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
         <!-- Dependencias para generar reportes en Excel (Apache POI) -->
         <dependency>
             <groupId>org.apache.poi</groupId>

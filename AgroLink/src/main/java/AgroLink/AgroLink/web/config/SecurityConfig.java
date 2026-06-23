@@ -50,6 +50,11 @@ public class SecurityConfig {
                         .requestMatchers("/comprador/**").hasAuthority("COMPRADOR")
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
+                        .requestMatchers("/ws-agrolink/**").permitAll()
+
+                        // Historial de pedidos: accesible por AGRICULTOR y COMPRADOR
+                        .requestMatchers("/api/v1/pedidos/**").hasAnyAuthority("AGRICULTOR", "COMPRADOR")
+
                          // Permitir Swagger sin autenticación
                         .requestMatchers(
                             "/swagger-ui/**",
