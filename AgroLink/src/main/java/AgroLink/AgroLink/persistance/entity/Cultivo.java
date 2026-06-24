@@ -32,8 +32,8 @@ public class Cultivo {
     private Integer diasTotalesEstimados;
 
     // Indica si el lote está disponible para preventa en el catálogo de compradores
-    @Column(name = "disponible", nullable = false)
-    private Boolean disponible = false;
+    @Column(name = "disponible", nullable = true)
+    private Boolean disponible = true;
 
     @Column(name = "lote", length = 50)
     private String lote;

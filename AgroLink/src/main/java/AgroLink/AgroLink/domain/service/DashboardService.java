@@ -43,7 +43,7 @@ public class DashboardService {
     private final AgricultorRepository     agricultorRepository;
     private final CultivoRepository        cultivoRepository;
     private final DetallePedidoRepository  detallePedidoRepository;
-
+    CultivoService cultivoService;
     /**
      * Calcula y devuelve el resumen del dashboard para el agricultor
      * identificado por su email (extraído del JWT).
@@ -53,6 +53,11 @@ public class DashboardService {
      */
     public DashboardResumenResponse obtenerDashboard(String email) {
 
+        try {
+            cultivoService.actualizarEstadosDelAgricultor(email);
+        } catch (Exception e) {
+            System.err.println("Error actualizando estados: " + e.getMessage());
+        }
         // ── 1. Resolver entidad Agricultor desde el email del token ──────────
         Agricultor agricultor = obtenerAgricultorPorEmail(email);
 

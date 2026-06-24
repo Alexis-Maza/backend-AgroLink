@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface AgricultorRepository extends JpaRepository<Agricultor, Long> {
     Optional<Agricultor> findByUsuario(Usuario usuario);
     Optional<Agricultor> findByUsuarioEmail(String email);
+
 }

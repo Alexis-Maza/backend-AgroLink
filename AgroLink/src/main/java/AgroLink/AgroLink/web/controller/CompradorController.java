@@ -1,15 +1,14 @@
 package AgroLink.AgroLink.web.controller;
 
-import AgroLink.AgroLink.domain.dto.CambiarPasswordRequest;
-import AgroLink.AgroLink.domain.dto.DatosPersonalesCompradorRequest;
-import AgroLink.AgroLink.domain.dto.PerfilComercialRequest;
-import AgroLink.AgroLink.domain.dto.PerfilCompradorResponse;
+import AgroLink.AgroLink.domain.dto.*;
 import AgroLink.AgroLink.domain.service.CompradorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/comprador")
@@ -50,6 +49,14 @@ public class CompradorController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(
                 compradorService.obtenerPerfil(userDetails.getUsername())
+        );
+    }
+
+    @GetMapping("/pedidos")
+    public ResponseEntity<List<PedidoResponseDTO>> obtenerMisPedidos(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(
+                compradorService.obtenerPedidosPorComprador(userDetails.getUsername())
         );
     }
 }

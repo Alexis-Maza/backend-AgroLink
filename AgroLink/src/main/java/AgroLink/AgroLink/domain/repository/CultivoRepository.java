@@ -18,7 +18,8 @@ public interface CultivoRepository extends JpaRepository<Cultivo, Long>,
     List<Cultivo> findByEstadoCultivoDescripcionEstadoCultivoNotIn(
         java.util.Collection<String> descripciones);
     List<Cultivo> findByDisponibleTrue();
-
+    List<Cultivo> findByProductoVariedadId(Long idProductoVariedad);
+    List<Cultivo> findByProductoVariedadIdAndAgricultorId(Long idVariedad, Long idAgricultor);
     // Métodos para reportes
     List<Cultivo> findByAgricultorAndFechaSiembraBetween(
             Agricultor agricultor, LocalDate fechaInicio, LocalDate fechaFin);

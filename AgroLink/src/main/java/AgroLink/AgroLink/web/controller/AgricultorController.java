@@ -72,7 +72,8 @@ public class AgricultorController {
         return ResponseEntity.ok(
                 dashboardService.obtenerDashboard(userDetails.getUsername())
         );
-    @GetMapping("/ventas")
+    }
+        @GetMapping("/ventas")
     public ResponseEntity<List<VentaAgricultorDTO>> obtenerVentas(
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(agricultorService.obtenerVentas(userDetails.getUsername()));

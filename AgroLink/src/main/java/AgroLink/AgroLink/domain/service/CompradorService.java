@@ -1,9 +1,7 @@
 package AgroLink.AgroLink.domain.service;
 
-import AgroLink.AgroLink.domain.dto.CambiarPasswordRequest;
-import AgroLink.AgroLink.domain.dto.DatosPersonalesCompradorRequest;
-import AgroLink.AgroLink.domain.dto.PerfilComercialRequest;
-import AgroLink.AgroLink.domain.dto.PerfilCompradorResponse;
+import AgroLink.AgroLink.domain.dto.*;
+import AgroLink.AgroLink.domain.repository.PedidoRepository;
 import AgroLink.AgroLink.persistance.entity.Comprador;
 import AgroLink.AgroLink.persistance.entity.Usuario;
 import AgroLink.AgroLink.domain.repository.CompradorRepository;
@@ -11,8 +9,10 @@ import AgroLink.AgroLink.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import AgroLink.AgroLink.domain.dto.PedidoResponseDTO;
+import java.util.stream.Collectors;
 
-import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +21,7 @@ public class CompradorService {
     private final UsuarioRepository usuarioRepository;
     private final CompradorRepository compradorRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PedidoRepository pedidoRepository;
 
     // Sección 1 — Datos Personales
     public void actualizarDatosPersonales(String email, DatosPersonalesCompradorRequest request) {
@@ -87,5 +88,27 @@ public class CompradorService {
                 comprador.getUbicacion(),
                 comprador.getDireccion()
         );
+    }
+
+    public List<PedidoResponseDTO> obtenerPedidosPorComprador(String email) {
+        Comprador comprador = compradorRepository.findByUsuarioEmail(email)
+                .orElseThrow(() -> new RuntimeException("Comprador no encontrado: " + email));
+
+        return pedidoRepository.findByComprador(comprador).stream()
+                .map(pedido -> new PedidoResponseDTO(
+                        pedido.getId(),
+                        pedido.getFechaCreacion(),
+                        pedido.getEstadoPedido().getDescripcionEstadoPedido(),
+                        pedido.getDetalles().stream()
+                                .map(d -> new PedidoResponseDTO.DetalleResponseDTO(
+                                        d.getCultivo().getId(),
+                                        d.getCultivo().getProductoVariedad().getNombreProductosVariedad(),
+                                        d.getCantidadSolicitada(),
+                                        d.getPrecioPactado(),
+                                        d.getDireccion()
+                                ))
+                                .collect(Collectors.toList())
+                ))
+                .collect(Collectors.toList());
     }
 }
