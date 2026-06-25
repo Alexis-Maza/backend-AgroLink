@@ -18,4 +18,6 @@ public interface HistorialCultivoRepository extends JpaRepository<Historial_Cult
     // RF-A2-05: Obtener todas las etapas activas que tienen etapa de referencia definida.
     // Equivalente a: WHERE fecha_fin IS NULL AND id_etapa_productos_variedad IS NOT NULL
     List<Historial_Cultivo> findByFechaFinIsNullAndEtapaProductoVariedadIsNotNull();
+
+    void deleteAllByCultivo(Cultivo cultivo);
 }

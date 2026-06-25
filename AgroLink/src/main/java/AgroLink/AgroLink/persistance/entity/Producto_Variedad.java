@@ -19,7 +19,7 @@ public class Producto_Variedad {
     private boolean activo = true;
 
     // Relación con el producto base (ej. "Papa" tiene variedad "Yungay")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_producto")
     private Producto producto;
 }

@@ -108,7 +108,7 @@ public class AgricultorService {
     }
 
     // Sección 4 — Venta de Productos
-    @Transactional(readOnly = true)
+    @Transactional
     public List<VentaAgricultorDTO> obtenerVentas(String email) {
         Agricultor agricultor = agricultorRepository.findByUsuarioEmail(email)
                 .orElseThrow(() -> new RuntimeException("Agricultor no encontrado"));
@@ -128,6 +128,9 @@ public class AgricultorService {
 
                 ventas.add(new VentaAgricultorDTO(
                         pedido.getId(),
+                        d.getCultivo().getProductoVariedad().getProducto() != null   // ← nuevo
+                                ? d.getCultivo().getProductoVariedad().getProducto().getNombre()
+                                : "—",
                         d.getCultivo().getProductoVariedad().getNombreProductosVariedad(),
                         nombreComprador,
                         empresa,

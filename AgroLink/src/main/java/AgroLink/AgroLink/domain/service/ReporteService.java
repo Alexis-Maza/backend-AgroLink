@@ -28,15 +28,12 @@ public class ReporteService {
     private final AgricultorRepository agricultorRepository;
     private final CompradorRepository compradorRepository;
 
-    // Paleta de colores AgroLink
-    private static final byte[] COLOR_VERDE_OSCURO = {(byte)0x1B, (byte)0x5E, (byte)0x20}; // #1B5E20
-    private static final byte[] COLOR_VERDE_CLARO  = {(byte)0xE8, (byte)0xF5, (byte)0xE9}; // #E8F5E9
-    private static final byte[] COLOR_TITULO_BG    = {(byte)0x2E, (byte)0x7D, (byte)0x32}; // #2E7D32
+    private static final byte[] COLOR_VERDE_OSCURO = {(byte)0x1B, (byte)0x5E, (byte)0x20};
+    private static final byte[] COLOR_VERDE_CLARO  = {(byte)0xE8, (byte)0xF5, (byte)0xE9};
+    private static final byte[] COLOR_TITULO_BG    = {(byte)0x2E, (byte)0x7D, (byte)0x32};
 
     private static final DateTimeFormatter DATE_FMT     = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-    // ── Estilos reutilizables ─────────────────────────────────────────────
 
     private static class Estilos {
         CellStyle titulo;
@@ -53,23 +50,19 @@ public class ReporteService {
         Estilos e = new Estilos();
         DataFormat df = wb.createDataFormat();
 
-        // Fuente para encabezado
         XSSFFont fuenteHeader = wb.createFont();
         fuenteHeader.setBold(true);
         fuenteHeader.setFontHeightInPoints((short) 11);
         fuenteHeader.setColor(new XSSFColor(new byte[]{(byte)0xFF,(byte)0xFF,(byte)0xFF}, null));
 
-        // Fuente para título
         XSSFFont fuenteTitulo = wb.createFont();
         fuenteTitulo.setBold(true);
         fuenteTitulo.setFontHeightInPoints((short) 14);
         fuenteTitulo.setColor(new XSSFColor(new byte[]{(byte)0xFF,(byte)0xFF,(byte)0xFF}, null));
 
-        // Fuente para datos
         XSSFFont fuenteDato = wb.createFont();
         fuenteDato.setFontHeightInPoints((short) 10);
 
-        // Estilo TÍTULO (fila 0 - merged)
         XSSFCellStyle sTitulo = wb.createCellStyle();
         sTitulo.setFont(fuenteTitulo);
         sTitulo.setFillForegroundColor(new XSSFColor(COLOR_TITULO_BG, null));
@@ -78,7 +71,6 @@ public class ReporteService {
         sTitulo.setVerticalAlignment(VerticalAlignment.CENTER);
         e.titulo = sTitulo;
 
-        // Estilo ENCABEZADO (fila 1)
         XSSFCellStyle sHeader = wb.createCellStyle();
         sHeader.setFont(fuenteHeader);
         sHeader.setFillForegroundColor(new XSSFColor(COLOR_VERDE_OSCURO, null));
@@ -89,14 +81,12 @@ public class ReporteService {
         aplicarBordes(sHeader);
         e.encabezado = sHeader;
 
-        // Estilo DATO normal
         XSSFCellStyle sDato = wb.createCellStyle();
         sDato.setFont(fuenteDato);
         sDato.setVerticalAlignment(VerticalAlignment.CENTER);
         aplicarBordes(sDato);
         e.dato = sDato;
 
-        // Estilo DATO alternado (verde claro)
         XSSFCellStyle sDatoAlt = wb.createCellStyle();
         sDatoAlt.setFont(fuenteDato);
         sDatoAlt.setFillForegroundColor(new XSSFColor(COLOR_VERDE_CLARO, null));
@@ -105,7 +95,6 @@ public class ReporteService {
         aplicarBordes(sDatoAlt);
         e.datoAlt = sDatoAlt;
 
-        // Estilo NÚMERO
         XSSFCellStyle sNum = wb.createCellStyle();
         sNum.setFont(fuenteDato);
         sNum.setDataFormat(df.getFormat("#,##0.00"));
@@ -113,7 +102,6 @@ public class ReporteService {
         aplicarBordes(sNum);
         e.numero = sNum;
 
-        // Estilo NÚMERO alternado
         XSSFCellStyle sNumAlt = wb.createCellStyle();
         sNumAlt.setFont(fuenteDato);
         sNumAlt.setDataFormat(df.getFormat("#,##0.00"));
@@ -123,14 +111,12 @@ public class ReporteService {
         aplicarBordes(sNumAlt);
         e.numeroAlt = sNumAlt;
 
-        // Estilo FECHA
         XSSFCellStyle sFecha = wb.createCellStyle();
         sFecha.setFont(fuenteDato);
         sFecha.setAlignment(HorizontalAlignment.CENTER);
         aplicarBordes(sFecha);
         e.fecha = sFecha;
 
-        // Estilo FECHA alternado
         XSSFCellStyle sFechaAlt = wb.createCellStyle();
         sFechaAlt.setFont(fuenteDato);
         sFechaAlt.setAlignment(HorizontalAlignment.CENTER);
@@ -149,10 +135,8 @@ public class ReporteService {
         style.setBorderRight(BorderStyle.THIN);
     }
 
-    /** Escribe una fila de encabezado y configura freeze + autofilter */
     private void configurarHoja(XSSFSheet sheet, String titulo, String[] headers,
-                                 Estilos e, int numCols) {
-        // Fila 0: título del reporte (celdas fusionadas)
+                                Estilos e, int numCols) {
         Row rowTitulo = sheet.createRow(0);
         rowTitulo.setHeightInPoints(28);
         Cell celdaTitulo = rowTitulo.createCell(0);
@@ -160,7 +144,6 @@ public class ReporteService {
         celdaTitulo.setCellStyle(e.titulo);
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, numCols - 1));
 
-        // Fila 1: encabezados de columnas
         Row rowHeader = sheet.createRow(1);
         rowHeader.setHeightInPoints(20);
         for (int i = 0; i < headers.length; i++) {
@@ -169,11 +152,17 @@ public class ReporteService {
             cell.setCellStyle(e.encabezado);
         }
 
-        // Congelar las 2 primeras filas
         sheet.createFreezePane(0, 2);
-
-        // Auto-filter desde fila 1
         sheet.setAutoFilter(new CellRangeAddress(1, 1, 0, numCols - 1));
+    }
+
+    // ── Helper para obtener "Producto - Variedad" de forma segura ────────
+    private String getNombreProductoVariedad(Producto_Variedad pv) {
+        if (pv == null) return "—";
+        String variedad = pv.getNombreProductosVariedad() != null ? pv.getNombreProductosVariedad() : "—";
+        String producto = (pv.getProducto() != null && pv.getProducto().getNombre() != null)
+                ? pv.getProducto().getNombre() : "—";
+        return producto + " - " + variedad;
     }
 
     // ── Catálogo de Cultivos ──────────────────────────────────────────────
@@ -205,19 +194,19 @@ public class ReporteService {
                 Row row = sheet.createRow(rowNum++);
                 row.setHeightInPoints(16);
 
-                celdaDato(row, 0, String.valueOf(c.getId()),             alt ? e.datoAlt : e.dato);
-                celdaDato(row, 1, c.getLote(),                           alt ? e.datoAlt : e.dato);
-                celdaDato(row, 2, c.getProductoVariedad().getNombreProductosVariedad(), alt ? e.datoAlt : e.dato);
-                celdaDato(row, 3, c.getFechaSiembra().format(DATE_FMT),  alt ? e.fechaAlt : e.fecha);
-                celdaNumero(row, 4, toDouble(c.getAreaSembrada()),       alt ? e.numeroAlt : e.numero);
-                celdaDato(row, 5, String.valueOf(c.getDiasTotalesEstimados()), alt ? e.datoAlt : e.dato);
-                celdaDato(row, 6, c.getEstadoCultivo().getDescripcionEstadoCultivo(), alt ? e.datoAlt : e.dato);
-                celdaNumero(row, 7, toDouble(c.getPrecio()),             alt ? e.numeroAlt : e.numero);
-                celdaNumero(row, 8, toDouble(c.getMinimoVenta()),        alt ? e.numeroAlt : e.numero);
-                celdaNumero(row, 9, toDouble(c.getCantidadEstimada()),   alt ? e.numeroAlt : e.numero);
-                celdaNumero(row, 10, toDouble(c.getCantidadDisponible()),alt ? e.numeroAlt : e.numero);
-                celdaDato(row, 11, c.getUnidad(),                        alt ? e.datoAlt : e.dato);
-                celdaDato(row, 12, Boolean.TRUE.equals(c.getDisponible()) ? "✔ Sí" : "✘ No", alt ? e.datoAlt : e.dato);
+                celdaDato  (row, 0, String.valueOf(c.getId()),                      alt ? e.datoAlt : e.dato);
+                celdaDato  (row, 1, c.getLote(),                                    alt ? e.datoAlt : e.dato);
+                celdaDato  (row, 2, getNombreProductoVariedad(c.getProductoVariedad()), alt ? e.datoAlt : e.dato); // ← cambiado
+                celdaDato  (row, 3, c.getFechaSiembra().format(DATE_FMT),           alt ? e.fechaAlt : e.fecha);
+                celdaNumero(row, 4, toDouble(c.getAreaSembrada()),                  alt ? e.numeroAlt : e.numero);
+                celdaDato  (row, 5, String.valueOf(c.getDiasTotalesEstimados()),    alt ? e.datoAlt : e.dato);
+                celdaDato  (row, 6, c.getEstadoCultivo().getDescripcionEstadoCultivo(), alt ? e.datoAlt : e.dato);
+                celdaNumero(row, 7, toDouble(c.getPrecio()),                        alt ? e.numeroAlt : e.numero);
+                celdaNumero(row, 8, toDouble(c.getMinimoVenta()),                   alt ? e.numeroAlt : e.numero);
+                celdaNumero(row, 9, toDouble(c.getCantidadEstimada()),              alt ? e.numeroAlt : e.numero);
+                celdaNumero(row, 10, toDouble(c.getCantidadDisponible()),           alt ? e.numeroAlt : e.numero);
+                celdaDato  (row, 11, c.getUnidad(),                                 alt ? e.datoAlt : e.dato);
+                celdaDato  (row, 12, Boolean.TRUE.equals(c.getDisponible()) ? "✔ Sí" : "✘ No", alt ? e.datoAlt : e.dato);
             }
 
             autoAjustarColumnas(sheet, headers.length);
@@ -270,7 +259,7 @@ public class ReporteService {
                     celdaDato  (row, 1, p.getFechaCreacion().format(DATETIME_FMT),  alt ? e.fechaAlt : e.fecha);
                     celdaDato  (row, 2, p.getComprador().getUsuario().getNombres()
                             + " " + p.getComprador().getUsuario().getApellidoPaterno(), alt ? e.datoAlt : e.dato);
-                    celdaDato  (row, 3, d.getCultivo().getProductoVariedad().getNombreProductosVariedad(), alt ? e.datoAlt : e.dato);
+                    celdaDato  (row, 3, getNombreProductoVariedad(d.getCultivo().getProductoVariedad()), alt ? e.datoAlt : e.dato); // ← cambiado
                     celdaDato  (row, 4, d.getCultivo().getLote(),                   alt ? e.datoAlt : e.dato);
                     celdaNumero(row, 5, cantidad,                                   alt ? e.numeroAlt : e.numero);
                     celdaNumero(row, 6, precio,                                     alt ? e.numeroAlt : e.numero);
@@ -323,7 +312,7 @@ public class ReporteService {
 
                     celdaDato  (row, 0, String.valueOf(p.getId()),                  alt ? e.datoAlt : e.dato);
                     celdaDato  (row, 1, p.getFechaCreacion().format(DATETIME_FMT),  alt ? e.fechaAlt : e.fecha);
-                    celdaDato  (row, 2, d.getCultivo().getProductoVariedad().getNombreProductosVariedad(), alt ? e.datoAlt : e.dato);
+                    celdaDato  (row, 2, getNombreProductoVariedad(d.getCultivo().getProductoVariedad()), alt ? e.datoAlt : e.dato); // ← cambiado
                     celdaDato  (row, 3, d.getCultivo().getLote(),                   alt ? e.datoAlt : e.dato);
                     celdaDato  (row, 4, d.getCultivo().getAgricultor().getUsuario().getNombres()
                             + " " + d.getCultivo().getAgricultor().getUsuario().getApellidoPaterno(), alt ? e.datoAlt : e.dato);
@@ -361,7 +350,6 @@ public class ReporteService {
     private void autoAjustarColumnas(XSSFSheet sheet, int numCols) {
         for (int i = 0; i < numCols; i++) {
             sheet.autoSizeColumn(i);
-            // Añadir margen extra (256 = 1 carácter de ancho en POI)
             sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 512);
         }
     }

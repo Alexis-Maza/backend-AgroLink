@@ -25,6 +25,7 @@ public class CultivoResponse {
 
     // Información de la variedad de producto
     private Long idProductoVariedad;
+    private String nombreProducto;
     private String nombreProductoVariedad;
 
     // Días totales estimados para el ciclo

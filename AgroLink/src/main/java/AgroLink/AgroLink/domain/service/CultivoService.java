@@ -150,6 +150,11 @@ public class CultivoService {
         Cultivo cultivo = cultivoRepository.findById(idCultivo)
                 .orElseThrow(() -> new RuntimeException("Cultivo no encontrado"));
         validarPropietario(cultivo, email);
+
+        // Primero eliminar el historial asociado
+        historialCultivoRepository.deleteAllByCultivo(cultivo);
+
+        // Luego eliminar el cultivo
         cultivoRepository.delete(cultivo);
     }
 
@@ -320,11 +325,24 @@ public class CultivoService {
     }
 
     private CultivoResponse mapearCultivoAResponse(Cultivo cultivo) {
-        // Obtener la etapa activa si existe
         Boolean alertaRetraso = historialCultivoRepository
                 .findByCultivoAndFechaFinIsNull(cultivo)
                 .map(this::calcularSiHayRetraso)
                 .orElse(false);
+
+        Producto_Variedad pv = cultivo.getProductoVariedad();
+        String nombreProducto = null;
+        String nombreVariedad = null;
+        Long idVariedad = null;
+
+        if (pv != null) {
+            idVariedad = pv.getId();
+            nombreVariedad = pv.getNombreProductosVariedad();
+            // Verificar que el Producto no sea null antes de acceder
+            if (pv.getProducto() != null) {
+                nombreProducto = pv.getProducto().getNombre();
+            }
+        }
 
         return new CultivoResponse(
                 cultivo.getId(),
@@ -332,11 +350,11 @@ public class CultivoService {
                 cultivo.getAreaSembrada(),
                 cultivo.getEstadoCultivo() != null ? cultivo.getEstadoCultivo().getDescripcionEstadoCultivo() : null,
                 alertaRetraso,
-                cultivo.getProductoVariedad() != null ? cultivo.getProductoVariedad().getId() : null,
-                cultivo.getProductoVariedad() != null ? cultivo.getProductoVariedad().getNombreProductosVariedad() : null,
+                idVariedad,
+                nombreProducto,
+                nombreVariedad,
                 cultivo.getDiasTotalesEstimados(),
                 cultivo.getDisponible(),
-                // Campos nuevos
                 cultivo.getLote(),
                 cultivo.getPrecio(),
                 cultivo.getMinimoVenta(),
