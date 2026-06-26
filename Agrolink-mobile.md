@@ -1,4 +1,4 @@
-Resumen completo — Web app a APK con Ionic + Capacitor
+ Web app a APK con Ionic + Capacitor
 Prerequisitos
 
 Node.js instalado
@@ -7,14 +7,18 @@ Android Studio instalado
 
 1 — Instalar Ionic CLI
 bashnpm install -g @ionic/cli
+
 2 — Crear proyecto Ionic
 bashionic start agrolink-mobile blank --type=react
 cd agrolink-mobile
+
 3 — Instalar Capacitor Android
 bashnpm install @capacitor/android
 npx cap add android
+
 4 — Editar capacitor.config.ts
 typescriptimport type { CapacitorConfig } from '@capacitor/cli';
+
 
 const config: CapacitorConfig = {
   appId: 'com.agrolink.app',
@@ -26,7 +30,9 @@ const config: CapacitorConfig = {
   }
 };
 
+
 export default config;
+
 5 — Build y sync
 bashnpm run build
 npx cap sync android
