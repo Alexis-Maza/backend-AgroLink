@@ -1,7 +1,9 @@
  Web app a APK con Ionic + Capacitor
+ 
 Prerequisitos
 
 Node.js instalado
+
 Android Studio instalado
 
 
@@ -25,7 +27,7 @@ const config: CapacitorConfig = {
   appName: 'AgroLink',
   webDir: 'dist',
   server: {
-    url: 'https://agrolink-frontend.onrender.com', // ← tu URL desplegada
+    url: 'https://agrolink-frontend.onrender.com', // ← Despliegue
     cleartext: true
   }
 };
@@ -37,6 +39,7 @@ export default config;
 bashnpm run build
 npx cap sync android
 npx cap open android
+
 6 — En Android Studio
 Build → Build App Bundle(s) / APK(s) → Build APK(s)
 Esperar y clic en "locate" para encontrar el app-debug.apk.
