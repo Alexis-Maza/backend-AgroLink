@@ -4,7 +4,6 @@ import AgroLink.AgroLink.domain.dto.ForgotPasswordRequest;
 import AgroLink.AgroLink.domain.dto.ResetPasswordRequest;
 import AgroLink.AgroLink.domain.repository.UsuarioRepository;
 import AgroLink.AgroLink.persistance.entity.Usuario;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
 
     public void forgotPassword(ForgotPasswordRequest request) {
-        try {
             Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("Email no encontrado"));
 
@@ -31,9 +29,7 @@ public class PasswordResetService {
             usuarioRepository.save(usuario);
 
             emailService.sendPasswordResetEmail(usuario.getEmail(), token);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Error al enviar el email");
-        }
+
     }
 
     public void resetPassword(ResetPasswordRequest request) {

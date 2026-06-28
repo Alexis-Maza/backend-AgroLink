@@ -1,35 +1,59 @@
 package AgroLink.AgroLink.domain.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${brevo.api.key}")
+    private String apiKey;
 
-    public void sendPasswordResetEmail(String toEmail, String token) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+    @Value("${brevo.from.email}")
+    private String fromEmail;
 
-        helper.setTo(toEmail);
-        helper.setSubject("Recuperar contraseña - AgroLink 🌱");
-        helper.setText("""
+    @Value("${brevo.from.name}")
+    private String fromName;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String BREVO_URL = "https://api.brevo.com/v3/smtp/email";
+
+    private void enviar(String toEmail, String subject, String html) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", apiKey);
+
+            Map<String, Object> body = Map.of(
+                    "sender", Map.of("name", fromName, "email", fromEmail),
+                    "to", List.of(Map.of("email", toEmail)),
+                    "subject", subject,
+                    "htmlContent", html
+            );
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            restTemplate.postForEntity(BREVO_URL, request, String.class);
+            System.out.println("Email enviado correctamente a: " + toEmail);
+        } catch (Exception e) {
+            System.err.println("Error al enviar email: " + e.getMessage());
+        }
+    }
+
+    public void sendVerificationEmail(String toEmail, String codigo) {
+        String html = """
             <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
                 <div style="max-width: 500px; margin: auto; background-color: white;
                             border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    
                     <h2 style="color: #2e7d32;">🌱 AgroLink</h2>
-                    <p>Hola,</p>
-                    <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-                    <p>Tu código de recuperación es:</p>
-                    
+                    <p>¡Bienvenido! Estás a un paso de unirte a AgroLink.</p>
+                    <p>Tu código de verificación es:</p>
                     <div style="text-align: center; margin: 40px 0;">
                         <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px;
                                      color: white; background-color: #2e7d32;
@@ -37,12 +61,10 @@ public class EmailService {
                             %s
                         </span>
                     </div>
-                    
                     <p style="color: #e53935; text-align: center; font-size: 13px;">⏱ Este código expira en 5 minutos.</p>
                     <p style="color: #999; font-size: 13px; text-align: center;">
-                        Si no solicitaste esto, ignora este mensaje.
+                        Si no creaste esta cuenta, ignora este mensaje.
                     </p>
-                    
                     <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                     <p style="color: #999; font-size: 12px; text-align: center;">
                         © 2026 AgroLink — Todos los derechos reservados
@@ -50,71 +72,54 @@ public class EmailService {
                 </div>
             </body>
             </html>
-        """.formatted(token), true);
-
-        mailSender.send(message);
+        """.formatted(codigo);
+        enviar(toEmail, "Verifica tu cuenta - AgroLink 🌱", html);
     }
 
-    public void sendVerificationEmail(String toEmail, String codigo) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Verifica tu cuenta - AgroLink 🌱");
-        helper.setText("""
-        <html>
-        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-            <div style="max-width: 500px; margin: auto; background-color: white;
-                        border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                
-                <h2 style="color: #2e7d32;">🌱 AgroLink</h2>
-                <p>¡Bienvenido! Estás a un paso de unirte a AgroLink.</p>
-                <p>Tu código de verificación es:</p>
-                
-                <div style="text-align: center; margin: 40px 0;">
-                    <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px;
-                                 color: white; background-color: #2e7d32;
-                                 padding: 15px 30px; border-radius: 8px;">
-                        %s
-                    </span>
+    public void sendPasswordResetEmail(String toEmail, String token) {
+        String html = """
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                <div style="max-width: 500px; margin: auto; background-color: white;
+                            border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h2 style="color: #2e7d32;">🌱 AgroLink</h2>
+                    <p>Hola,</p>
+                    <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+                    <p>Tu código de recuperación es:</p>
+                    <div style="text-align: center; margin: 40px 0;">
+                        <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px;
+                                     color: white; background-color: #2e7d32;
+                                     padding: 15px 30px; border-radius: 8px;">
+                            %s
+                        </span>
+                    </div>
+                    <p style="color: #e53935; text-align: center; font-size: 13px;">⏱ Este código expira en 5 minutos.</p>
+                    <p style="color: #999; font-size: 13px; text-align: center;">
+                        Si no solicitaste esto, ignora este mensaje.
+                    </p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="color: #999; font-size: 12px; text-align: center;">
+                        © 2026 AgroLink — Todos los derechos reservados
+                    </p>
                 </div>
-                
-                <p style="color: #e53935; text-align: center; font-size: 13px;">⏱ Este código expira en 5 minutos.</p>
-                <p style="color: #999; font-size: 13px; text-align: center; ">
-                    Si no creaste esta cuenta, ignora este mensaje.
-                </p>
-                
-                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="color: #999; font-size: 12px; text-align: center;">
-                    © 2024 AgroLink — Todos los derechos reservados
-                </p>
-            </div>
-        </body>
-        </html>
-    """.formatted(codigo), true);
-
-        mailSender.send(message);
+            </body>
+            </html>
+        """.formatted(token);
+        enviar(toEmail, "Recuperar contraseña - AgroLink 🌱", html);
     }
 
     public void sendAlertaStockMinimo(String toEmail, String nombreAgricultor,
                                       String lote, String producto,
                                       String cantidadDisponible, String minimoVenta,
-                                      String unidad) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Alerta de Stock Minimo - Lote " + lote + " | AgroLink");
-        helper.setText("""
+                                      String unidad) {
+        String html = """
             <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
                 <div style="max-width: 520px; margin: auto; background-color: white;
                             border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-
                     <h2 style="color: #2e7d32;">AgroLink</h2>
                     <p>Hola <strong>%s</strong>,</p>
-                    <p>El stock de uno de tus cultivos ha alcanzado el <strong style="color:#e53935;">nivel minimo de venta</strong>.</p>
-
+                    <p>El stock de uno de tus cultivos ha alcanzado el <strong style="color:#e53935;">nivel mínimo de venta</strong>.</p>
                     <table style="width:100%%; border-collapse:collapse; margin: 20px 0;">
                         <tr style="background-color:#e8f5e9;">
                             <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Lote</td>
@@ -129,47 +134,32 @@ public class EmailService {
                             <td style="padding:10px; border:1px solid #c8e6c9; color:#e53935; font-weight:bold;">%s %s</td>
                         </tr>
                         <tr>
-                            <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Minimo de venta</td>
+                            <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Mínimo de venta</td>
                             <td style="padding:10px; border:1px solid #c8e6c9;">%s %s</td>
                         </tr>
                     </table>
-
                     <p style="color:#555;">Te recomendamos revisar este cultivo y actualizar tu inventario.</p>
-
                     <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-                    <p style="color:#999; font-size:12px; text-align:center;">
-                        © 2026 AgroLink - Todos los derechos reservados
-                    </p>
+                    <p style="color:#999; font-size:12px; text-align:center;">© 2026 AgroLink - Todos los derechos reservados</p>
                 </div>
             </body>
             </html>
-        """.formatted(nombreAgricultor, lote, producto,
-                cantidadDisponible, unidad,
-                minimoVenta, unidad), true);
-
-        mailSender.send(message);
+        """.formatted(nombreAgricultor, lote, producto, cantidadDisponible, unidad, minimoVenta, unidad);
+        enviar(toEmail, "Alerta de Stock Mínimo - Lote " + lote + " | AgroLink", html);
     }
 
     public void sendAlertaCosecha(String toEmail, String nombreAgricultor,
                                   String lote, String producto,
-                                  String fechaCosecha, long diasRestantes) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        String diasTexto = diasRestantes == 0 ? "hoy" : (diasRestantes + " dia(s)");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Cosecha proxima - Lote " + lote + " | AgroLink");
-        helper.setText("""
+                                  String fechaCosecha, long diasRestantes) {
+        String diasTexto = diasRestantes == 0 ? "hoy" : (diasRestantes + " día(s)");
+        String html = """
             <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
                 <div style="max-width: 520px; margin: auto; background-color: white;
                             border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-
                     <h2 style="color: #2e7d32;">AgroLink</h2>
                     <p>Hola <strong>%s</strong>,</p>
-                    <p>Tu cultivo esta proximo a su fecha estimada de cosecha.</p>
-
+                    <p>Tu cultivo está próximo a su fecha estimada de cosecha.</p>
                     <table style="width:100%%; border-collapse:collapse; margin: 20px 0;">
                         <tr style="background-color:#e8f5e9;">
                             <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Lote</td>
@@ -188,18 +178,13 @@ public class EmailService {
                             <td style="padding:10px; border:1px solid #c8e6c9; color:#f57f17; font-weight:bold;">%s</td>
                         </tr>
                     </table>
-
                     <p style="color:#555;">Prepara los recursos necesarios para realizar la cosecha a tiempo.</p>
-
                     <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-                    <p style="color:#999; font-size:12px; text-align:center;">
-                        © 2026 AgroLink - Todos los derechos reservados
-                    </p>
+                    <p style="color:#999; font-size:12px; text-align:center;">© 2026 AgroLink - Todos los derechos reservados</p>
                 </div>
             </body>
             </html>
-        """.formatted(nombreAgricultor, lote, producto, fechaCosecha, diasTexto), true);
-
-        mailSender.send(message);
+        """.formatted(nombreAgricultor, lote, producto, fechaCosecha, diasTexto);
+        enviar(toEmail, "Cosecha próxima - Lote " + lote + " | AgroLink", html);
     }
 }

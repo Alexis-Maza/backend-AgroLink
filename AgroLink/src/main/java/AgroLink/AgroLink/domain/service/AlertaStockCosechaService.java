@@ -2,7 +2,6 @@ package AgroLink.AgroLink.domain.service;
 
 import AgroLink.AgroLink.domain.repository.CultivoRepository;
 import AgroLink.AgroLink.persistance.entity.Cultivo;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -54,40 +53,30 @@ public class AlertaStockCosechaService {
             String unidad = cultivo.getUnidad() != null ? cultivo.getUnidad() : "";
 
             if (esStockMinimo(cultivo)) {
-                try {
-                    emailService.sendAlertaStockMinimo(
-                            email,
-                            nombreAgricultor != null ? nombreAgricultor : "Agricultor",
-                            lote,
-                            producto,
-                            cultivo.getCantidadDisponible().toPlainString(),
-                            cultivo.getMinimoVenta().toPlainString(),
-                            unidad
-                    );
-                    alertasStock++;
-                } catch (MessagingException ex) {
-                    System.err.println("[AlertaStockCosechaService] Error enviando alerta de stock a "
-                            + email + ": " + ex.getMessage());
-                }
+                emailService.sendAlertaStockMinimo(
+                        email,
+                        nombreAgricultor != null ? nombreAgricultor : "Agricultor",
+                        lote,
+                        producto,
+                        cultivo.getCantidadDisponible().toPlainString(),
+                        cultivo.getMinimoVenta().toPlainString(),
+                        unidad
+                );
+                alertasStock++;
             }
 
             long diasRestantes = diasParaCosecha(cultivo);
             if (diasRestantes >= 0 && diasRestantes <= 5) {
-                try {
-                    LocalDate fechaCosecha = cultivo.getFechaSiembra().plusDays(cultivo.getDiasTotalesEstimados());
-                    emailService.sendAlertaCosecha(
-                            email,
-                            nombreAgricultor != null ? nombreAgricultor : "Agricultor",
-                            lote,
-                            producto,
-                            fechaCosecha.format(DATE_FMT),
-                            diasRestantes
-                    );
-                    alertasCosecha++;
-                } catch (MessagingException ex) {
-                    System.err.println("[AlertaStockCosechaService] Error enviando alerta de cosecha a "
-                            + email + ": " + ex.getMessage());
-                }
+                LocalDate fechaCosecha = cultivo.getFechaSiembra().plusDays(cultivo.getDiasTotalesEstimados());
+                emailService.sendAlertaCosecha(
+                        email,
+                        nombreAgricultor != null ? nombreAgricultor : "Agricultor",
+                        lote,
+                        producto,
+                        fechaCosecha.format(DATE_FMT),
+                        diasRestantes
+                );
+                alertasCosecha++;
             }
         }
 

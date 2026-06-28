@@ -9,9 +9,7 @@ import AgroLink.AgroLink.persistance.entity.Agricultor;
 import AgroLink.AgroLink.persistance.entity.Comprador;
 import AgroLink.AgroLink.persistance.entity.Rol;
 import AgroLink.AgroLink.persistance.entity.Usuario;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,12 +52,7 @@ public class AuthService {
 
         usuarioRepository.save(usuario);
 
-        // Enviar email con código
-        try {
-            emailService.sendVerificationEmail(request.getEmail(), codigo);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Error al enviar el email de verificación");
-        }
+        emailService.sendVerificationEmail(request.getEmail(), codigo);
 
         return "Código de verificación enviado a " + request.getEmail();
     }

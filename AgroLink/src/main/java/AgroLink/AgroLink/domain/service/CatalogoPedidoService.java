@@ -4,7 +4,6 @@ import AgroLink.AgroLink.domain.dto.PedidoRequestDTO;
 import AgroLink.AgroLink.domain.dto.PedidoResponseDTO;
 import AgroLink.AgroLink.domain.repository.*;
 import AgroLink.AgroLink.persistance.entity.*;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,7 +94,6 @@ public class CatalogoPedidoService {
 
             // Evaluar si stock bajo a minimo y enviar alerta inmediata
             if (esStockMinimo(cultivo)) {
-                try {
                     String nombreAgricultor = cultivo.getAgricultor().getUsuario().getNombres();
                     String emailAgricultor = cultivo.getAgricultor().getUsuario().getEmail();
                     String lote = cultivo.getLote() != null ? cultivo.getLote() : "Sin lote";
@@ -113,9 +111,7 @@ public class CatalogoPedidoService {
                     );
                     System.out.println("[CatalogoPedidoService] Alerta stock minimo enviada a " + emailAgricultor
                             + " para cultivo ID: " + cultivo.getId());
-                } catch (MessagingException ex) {
-                    System.err.println("[CatalogoPedidoService] Error enviando alerta stock: " + ex.getMessage());
-                }
+
             }
 
             // Crear detalle
