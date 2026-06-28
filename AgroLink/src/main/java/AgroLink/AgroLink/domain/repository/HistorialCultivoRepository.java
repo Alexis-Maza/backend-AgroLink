@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface HistorialCultivoRepository extends JpaRepository<Historial_Cultivo, Long> {
 
     // Obtener todo el historial de un cultivo ordenado cronológicamente
-    List<Historial_Cultivo> findByCultivoOrderByFechaInicioAscIdAsc(Cultivo cultivo);
+    List<Historial_Cultivo> findByCultivoOrderByFechaInicioAsc(Cultivo cultivo);
 
     // Obtener la etapa activa actual de un cultivo (sin fecha de fin)
     Optional<Historial_Cultivo> findByCultivoAndFechaFinIsNull(Cultivo cultivo);
