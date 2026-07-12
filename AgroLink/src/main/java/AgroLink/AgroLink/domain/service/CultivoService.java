@@ -3,6 +3,7 @@ package AgroLink.AgroLink.domain.service;
 import AgroLink.AgroLink.domain.dto.*;
 import AgroLink.AgroLink.domain.repository.AgricultorRepository;
 import AgroLink.AgroLink.domain.repository.CultivoRepository;
+import AgroLink.AgroLink.domain.repository.DetallePedidoRepository;
 import AgroLink.AgroLink.domain.repository.EtapaProductoVariedadRepository;
 import AgroLink.AgroLink.domain.repository.HistorialCultivoRepository;
 import AgroLink.AgroLink.domain.repository.EstadoCultivoRepository;
@@ -32,6 +33,8 @@ public class CultivoService {
     private final AgricultorRepository agricultorRepository;
     private final UsuarioRepository usuarioRepository;
     private final EstadoCultivoRepository estadoCultivoRepository;
+    private final PedidoCancelacionService pedidoCancelacionService;
+    private final DetallePedidoRepository detallePedidoRepository;
 
     // ── Sección 1: CRUD de Cultivos ────────────────────────────────────────
 
@@ -324,6 +327,19 @@ public class CultivoService {
         }
     }
 
+    /**
+     * RF-AF-07: stock físico restante de un cultivo = lo no vendido (cantidadDisponible)
+     * más lo ya reservado en pedidos activos (Pendiente/En preparación) todavía no despachados.
+     */
+    private BigDecimal calcularStockTotalRestante(Cultivo cultivo) {
+        BigDecimal reservadoEnPedidosActivos = detallePedidoRepository
+                .findByCultivoAndPedido_EstadoPedido_DescripcionEstadoPedidoIn(cultivo, PedidoCancelacionService.ESTADOS_ACTIVOS)
+                .stream()
+                .map(DetallePedido::getCantidadSolicitada)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return cultivo.getCantidadDisponible().add(reservadoEnPedidosActivos);
+    }
+
     private CultivoResponse mapearCultivoAResponse(Cultivo cultivo) {
         Boolean alertaRetraso = historialCultivoRepository
                 .findByCultivoAndFechaFinIsNull(cultivo)
@@ -344,6 +360,8 @@ public class CultivoService {
             }
         }
 
+        BigDecimal stockTotalRestante = calcularStockTotalRestante(cultivo);
+
         return new CultivoResponse(
                 cultivo.getId(),
                 cultivo.getFechaSiembra(),
@@ -361,7 +379,8 @@ public class CultivoService {
                 cultivo.getCantidadEstimada(),
                 cultivo.getCantidadDisponible(),
                 cultivo.getUnidad(),
-                cultivo.getImagenUrl()
+                cultivo.getImagenUrl(),
+                stockTotalRestante
         );
     }
 
@@ -437,9 +456,14 @@ public class CultivoService {
                 .orElseThrow(() -> new RuntimeException("Cultivo no encontrado"));
         validarPropietario(cultivo, email);
 
-        // Validar que la cantidad perdida no sea mayor al stock disponible
-        if (request.getCantidadPerdida().compareTo(cultivo.getCantidadDisponible()) > 0) {
-            throw new RuntimeException("La cantidad perdida no puede ser mayor al stock disponible");
+        // El stock que una merma puede afectar incluye tanto lo no vendido (cantidadDisponible)
+        // como lo ya reservado en pedidos activos (Pendiente/En preparación) de este cultivo:
+        // una pérdida real (plaga, etc.) puede destruir producto ya comprometido con un comprador.
+        BigDecimal stockTotalRestante = calcularStockTotalRestante(cultivo);
+
+        if (request.getCantidadPerdida().compareTo(stockTotalRestante) > 0) {
+            throw new RuntimeException(
+                    "La cantidad perdida no puede ser mayor al stock total restante (disponible + reservado en pedidos activos)");
         }
 
         // Restar la merma del stock disponible
@@ -447,6 +471,22 @@ public class CultivoService {
                 .subtract(request.getCantidadPerdida());
         cultivo.setCantidadDisponible(nuevoStock);
 
-        return mapearCultivoAResponse(cultivoRepository.save(cultivo));
+        Cultivo cultivoGuardado = cultivoRepository.save(cultivo);
+
+        // RF-AF-07: cancelar pedidos activos que ya no tengan stock suficiente tras la merma.
+        // Se evalúa con el stock (posiblemente negativo) recién guardado: ese valor "de más"
+        // representa lo que la merma se comió del stock reservado en pedidos activos.
+        String motivo = "Cancelado por merma"
+                + (request.getCausa() != null && !request.getCausa().isBlank() ? ": " + request.getCausa() : "");
+        pedidoCancelacionService.evaluarCancelacionesPorCultivo(cultivoGuardado, motivo);
+
+        // Una vez canceladas las órdenes que ya no caben, no tiene sentido mostrarle al
+        // agricultor un stock disponible negativo: se normaliza a 0 para la vista.
+        if (cultivoGuardado.getCantidadDisponible().compareTo(BigDecimal.ZERO) < 0) {
+            cultivoGuardado.setCantidadDisponible(BigDecimal.ZERO);
+            cultivoGuardado = cultivoRepository.save(cultivoGuardado);
+        }
+
+        return mapearCultivoAResponse(cultivoGuardado);
     }
 }

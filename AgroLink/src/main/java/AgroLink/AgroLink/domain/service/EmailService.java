@@ -187,4 +187,38 @@ public class EmailService {
         """.formatted(nombreAgricultor, lote, producto, fechaCosecha, diasTexto);
         enviar(toEmail, "Cosecha próxima - Lote " + lote + " | AgroLink", html);
     }
+
+    public void sendCancelacionPedidoPorStock(String toEmail, String nombreComprador,
+                                               Long idPedido, String producto, String motivo) {
+        String html = """
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                <div style="max-width: 520px; margin: auto; background-color: white;
+                            border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h2 style="color: #2e7d32;">AgroLink</h2>
+                    <p>Hola <strong>%s</strong>,</p>
+                    <p>Lamentamos informarte que tu pedido ha sido <strong style="color:#e53935;">cancelado</strong> por falta de disponibilidad.</p>
+                    <table style="width:100%%; border-collapse:collapse; margin: 20px 0;">
+                        <tr style="background-color:#e8f5e9;">
+                            <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Pedido</td>
+                            <td style="padding:10px; border:1px solid #c8e6c9;">#%d</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Producto</td>
+                            <td style="padding:10px; border:1px solid #c8e6c9;">%s</td>
+                        </tr>
+                        <tr style="background-color:#e8f5e9;">
+                            <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Motivo</td>
+                            <td style="padding:10px; border:1px solid #c8e6c9; color:#e53935;">%s</td>
+                        </tr>
+                    </table>
+                    <p style="color:#555;">Puedes revisar el catálogo para encontrar productos disponibles similares.</p>
+                    <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
+                    <p style="color:#999; font-size:12px; text-align:center;">© 2026 AgroLink - Todos los derechos reservados</p>
+                </div>
+            </body>
+            </html>
+        """.formatted(nombreComprador, idPedido, producto, motivo);
+        enviar(toEmail, "Pedido #" + idPedido + " cancelado - AgroLink", html);
+    }
 }
