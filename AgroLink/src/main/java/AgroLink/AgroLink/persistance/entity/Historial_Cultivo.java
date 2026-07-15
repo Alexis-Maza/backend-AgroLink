@@ -27,6 +27,9 @@ public class Historial_Cultivo {
     @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
+    // Observaciones del agricultor para esta etapa específica
+    @Column(name = "observaciones", columnDefinition = "TEXT")
+    private String observaciones;
 
     // --- Relaciones ---
 

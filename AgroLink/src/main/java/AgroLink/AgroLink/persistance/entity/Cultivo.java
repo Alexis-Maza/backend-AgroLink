@@ -56,6 +56,10 @@ public class Cultivo {
     @Column(name = "imagen_url", columnDefinition = "TEXT")
     private String imagenUrl;
 
+    // Observaciones generales del cultivo (notas del agricultor)
+    @Column(name = "observaciones", columnDefinition = "TEXT")
+    private String observaciones;
+
     // --- Relaciones ---
 
     // Agricultor propietario del cultivo (relación con Dev 1)
