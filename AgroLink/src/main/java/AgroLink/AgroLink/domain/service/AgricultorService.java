@@ -91,6 +91,7 @@ public class AgricultorService {
                 .orElse(new Agricultor());
 
         return new PerfilAgricultorResponse(
+                agricultor.getId(), // <-- NUEVO, primero para coincidir con el DTO
                 usuario.getNombres(),
                 usuario.getApellidoPaterno(),
                 usuario.getApellidoMaterno(),
@@ -121,6 +122,12 @@ public class AgricultorService {
                 if (!d.getCultivo().getAgricultor().getId().equals(agricultor.getId())) continue;
 
                 BigDecimal total = d.getCantidadSolicitada().multiply(d.getPrecioPactado());
+
+                Integer porcentaje = d.getPorcentajeAdelanto() != null ? d.getPorcentajeAdelanto() : 0;
+                BigDecimal montoAdelanto = total.multiply(BigDecimal.valueOf(porcentaje))
+                        .divide(BigDecimal.valueOf(100));
+                BigDecimal montoContraentrega = total.subtract(montoAdelanto);
+
                 String nombreComprador = pedido.getComprador().getUsuario().getNombres()
                         + " " + pedido.getComprador().getUsuario().getApellidoPaterno();
                 String empresa = pedido.getComprador().getNombreNegocio() != null
@@ -128,7 +135,7 @@ public class AgricultorService {
 
                 ventas.add(new VentaAgricultorDTO(
                         pedido.getId(),
-                        d.getCultivo().getProductoVariedad().getProducto() != null   // ← nuevo
+                        d.getCultivo().getProductoVariedad().getProducto() != null
                                 ? d.getCultivo().getProductoVariedad().getProducto().getNombre()
                                 : "—",
                         d.getCultivo().getProductoVariedad().getNombreProductosVariedad(),
@@ -140,7 +147,11 @@ public class AgricultorService {
                         pedido.getFechaCreacion().format(fmt),
                         d.getCultivo().getLote(),
                         pedido.getEstadoPedido().getDescripcionEstadoPedido(),
-                        d.getDireccion()
+                        d.getDireccion(),
+                        d.getMetodoPago() != null ? d.getMetodoPago() : "—",           // <-- NUEVO
+                        porcentaje,                                                    // <-- NUEVO
+                        "S/ " + String.format("%.2f", montoAdelanto),                  // <-- NUEVO
+                        "S/ " + String.format("%.2f", montoContraentrega)              // <-- NUEVO
                 ));
             }
         }

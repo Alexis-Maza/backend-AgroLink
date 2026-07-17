@@ -14,5 +14,7 @@ public class PedidoRequestDTO {
         private Double cantidad;
         private Double precioPactado;
         private String direccionEntrega;
+        private String metodoPago;
+        private Integer porcentajeAdelanto;
     }
 }

@@ -2,6 +2,7 @@ package AgroLink.AgroLink.web.controller;
 
 import AgroLink.AgroLink.domain.dto.PedidoRequestDTO;
 import AgroLink.AgroLink.domain.dto.PedidoResponseDTO;
+import AgroLink.AgroLink.domain.exception.StockInsuficienteException;
 import AgroLink.AgroLink.domain.service.CatalogoPedidoService;
 import AgroLink.AgroLink.persistance.entity.Cultivo;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,9 +42,16 @@ public class CatalogoPedidoController {
             @RequestBody PedidoRequestDTO request) {
         try {
             PedidoResponseDTO response = catalogoPedidoService.crearPedido(
-                userDetails.getUsername(), request
+                    userDetails.getUsername(), request
             );
             return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (StockInsuficienteException e) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("mensaje", "Stock insuficiente");
+            body.put("nombreProducto", e.getNombreProducto());
+            body.put("stockDisponible", e.getStockDisponible());
+            body.put("unidad", e.getUnidad());
+            return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }

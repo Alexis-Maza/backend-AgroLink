@@ -19,6 +19,7 @@ public class PedidoResponseDTO {
     public static class DetalleResponseDTO {
         private Long idCultivo;
         private String nombreProducto;
+        private String nombreProductoVariedad;
         private BigDecimal cantidadSolicitada;
         private BigDecimal precioPactado;
         private String direccion;

@@ -6,6 +6,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -220,5 +221,43 @@ public class EmailService {
             </html>
         """.formatted(nombreComprador, idPedido, producto, motivo);
         enviar(toEmail, "Pedido #" + idPedido + " cancelado - AgroLink", html);
+    }
+
+    public void sendConfirmacionPedido(String toEmail, String nombreComprador, Long idPedido,
+                                       List<String> productos, BigDecimal total) {
+        String filas = productos.stream()
+                .map(p -> "<tr><td style=\"padding:8px; border:1px solid #c8e6c9;\">" + p + "</td></tr>")
+                .collect(java.util.stream.Collectors.joining());
+
+        String html = """
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+            <div style="max-width: 520px; margin: auto; background-color: white;
+                        border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h2 style="color: #2e7d32;">AgroLink</h2>
+                <p>Hola <strong>%s</strong>,</p>
+                <p>¡Gracias por tu compra! Confirmamos que hemos recibido tu pedido.</p>
+                <table style="width:100%%; border-collapse:collapse; margin: 20px 0;">
+                    <tr style="background-color:#e8f5e9;">
+                        <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Pedido</td>
+                        <td style="padding:10px; border:1px solid #c8e6c9;">#%d</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;" colspan="2">Productos</td>
+                    </tr>
+                    %s
+                    <tr style="background-color:#e8f5e9;">
+                        <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold;">Total</td>
+                        <td style="padding:10px; border:1px solid #c8e6c9; font-weight:bold; color:#2e7d32;">S/ %.2f</td>
+                    </tr>
+                </table>
+                <p style="color:#555;">Puedes seguir el estado de tu pedido desde la sección "Mis Compras".</p>
+                <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
+                <p style="color:#999; font-size:12px; text-align:center;">© 2026 AgroLink - Todos los derechos reservados</p>
+            </div>
+        </body>
+        </html>
+    """.formatted(nombreComprador, idPedido, filas, total);
+        enviar(toEmail, "Confirmación de tu pedido #" + idPedido + " - AgroLink", html);
     }
 }

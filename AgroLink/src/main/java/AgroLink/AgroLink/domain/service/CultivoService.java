@@ -10,11 +10,14 @@ import AgroLink.AgroLink.domain.repository.EstadoCultivoRepository;
 import AgroLink.AgroLink.persistance.entity.*;
 import AgroLink.AgroLink.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +38,7 @@ public class CultivoService {
     private final EstadoCultivoRepository estadoCultivoRepository;
     private final PedidoCancelacionService pedidoCancelacionService;
     private final DetallePedidoRepository detallePedidoRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ── Sección 1: CRUD de Cultivos ────────────────────────────────────────
 
@@ -230,7 +234,6 @@ public class CultivoService {
 
     @Transactional
     public void actualizarEstadosDeCultivos() {
-        // Obtenemos cultivos activos (en estado 'Recién cultivado' o 'En crecimiento')
         List<Cultivo> cultivosActivos = cultivoRepository.findByEstadoCultivoDescripcionEstadoCultivoIn(
                 List.of("Recién cultivado", "En crecimiento")
         );
@@ -243,14 +246,12 @@ public class CultivoService {
                 Estado_Cultivo nuevoEstado = obtenerEstadoPorNombre(nuevoEstadoNombre);
                 cultivo.setEstadoCultivo(nuevoEstado);
 
-                // Cerrar la etapa activa anterior
                 historialCultivoRepository.findByCultivoAndFechaFinIsNull(cultivo)
                         .ifPresent(etapaAnterior -> {
                             etapaAnterior.setFechaFin(LocalDate.now());
                             historialCultivoRepository.save(etapaAnterior);
                         });
 
-                // Abrir nueva etapa
                 Historial_Cultivo nuevaEtapa = new Historial_Cultivo();
                 nuevaEtapa.setFechaInicio(LocalDate.now());
                 nuevaEtapa.setFechaFin(null);
@@ -258,9 +259,16 @@ public class CultivoService {
                 nuevaEtapa.setEstadoCultivo(nuevoEstado);
                 historialCultivoRepository.save(nuevaEtapa);
 
-                // Si es listo para cosechar, habilitar catálogo
                 if (nuevoEstadoNombre.equals("Listo para cosechar")) {
-                    cultivo.setDisponible(true);
+                    // --- NUEVO: notificación al agricultor ---
+                    NotificacionDTO notif = new NotificacionDTO(
+                            "historial-cultivo-" + nuevaEtapa.getId(),
+                            "CULTIVO_LISTO",
+                            "El cultivo del lote '" + cultivo.getLote() + "' superó su fecha estimada y ya está listo para cosechar",
+                            LocalDateTime.now(),
+                            cultivo.getId()
+                    );
+                    messagingTemplate.convertAndSend("/topic/agricultor/" + cultivo.getAgricultor().getId(), notif);
                 }
 
                 cultivoRepository.save(cultivo);
@@ -296,6 +304,16 @@ public class CultivoService {
 
                 if (nuevoEstadoNombre.equals("Listo para cosechar")) {
                     cultivo.setDisponible(true);
+
+                    // --- NUEVO: notificación al agricultor ---
+                    NotificacionDTO notif = new NotificacionDTO(
+                            "historial-cultivo-" + nuevaEtapa.getId(),
+                            "CULTIVO_LISTO",
+                            "El cultivo del lote '" + cultivo.getLote() + "' superó su fecha estimada y ya está listo para cosechar",
+                            LocalDateTime.now(),
+                            cultivo.getId()
+                    );
+                    messagingTemplate.convertAndSend("/topic/agricultor/" + cultivo.getAgricultor().getId(), notif);
                 }
 
                 cultivoRepository.save(cultivo);
@@ -488,5 +506,57 @@ public class CultivoService {
         }
 
         return mapearCultivoAResponse(cultivoGuardado);
+    }
+
+    @Transactional
+    public CultivoResponse confirmarCosecha(Long idCultivo, String email, BigDecimal volumenCosechado) {
+        Cultivo cultivo = cultivoRepository.findById(idCultivo)
+                .orElseThrow(() -> new RuntimeException("Cultivo no encontrado"));
+        validarPropietario(cultivo, email);
+
+        if (!cultivo.getEstadoCultivo().getDescripcionEstadoCultivo().equals("Listo para cosechar")) {
+            throw new RuntimeException("Solo se puede confirmar la cosecha de un cultivo en estado 'Listo para cosechar'");
+        }
+
+        if (volumenCosechado == null || volumenCosechado.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("El volumen cosechado debe ser mayor a cero");
+        }
+
+        // Calcular rendimiento: real vs estimado
+        BigDecimal rendimientoPorcentaje = cultivo.getCantidadEstimada() != null
+                && cultivo.getCantidadEstimada().compareTo(BigDecimal.ZERO) > 0
+                ? volumenCosechado.divide(cultivo.getCantidadEstimada(), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                : null;
+
+        // Cerrar la etapa activa
+        historialCultivoRepository.findByCultivoAndFechaFinIsNull(cultivo)
+                .ifPresent(etapaActiva -> {
+                    etapaActiva.setFechaFin(LocalDate.now());
+                    historialCultivoRepository.save(etapaActiva);
+                });
+
+        // Nuevo estado "Cosechado"
+        Estado_Cultivo estadoCosechado = obtenerEstadoPorNombre("Cosechado");
+        cultivo.setEstadoCultivo(estadoCosechado);
+
+        // Registrar la nueva etapa (cerrada de inmediato, ya que "Cosechado" es un punto final, no un rango activo)
+        Historial_Cultivo etapaCosecha = new Historial_Cultivo();
+        etapaCosecha.setFechaInicio(LocalDate.now());
+        etapaCosecha.setFechaFin(LocalDate.now());
+        etapaCosecha.setCultivo(cultivo);
+        etapaCosecha.setEstadoCultivo(estadoCosechado);
+        etapaCosecha.setObservaciones(
+                "Volumen cosechado: " + volumenCosechado + " " + cultivo.getUnidad()
+                        + (rendimientoPorcentaje != null ? " (Rendimiento: " + rendimientoPorcentaje + "% del estimado)" : "")
+        );
+        historialCultivoRepository.save(etapaCosecha);
+
+        // Ahora sí: volumen real disponible para venta
+        cultivo.setCantidadDisponible(volumenCosechado);
+        cultivo.setDisponible(true);
+        Cultivo guardado = cultivoRepository.save(cultivo);
+
+        return mapearCultivoAResponse(guardado);
     }
 }

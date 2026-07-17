@@ -19,5 +19,11 @@ public interface HistorialCultivoRepository extends JpaRepository<Historial_Cult
     // Equivalente a: WHERE fecha_fin IS NULL AND id_etapa_productos_variedad IS NOT NULL
     List<Historial_Cultivo> findByFechaFinIsNullAndEtapaProductoVariedadIsNotNull();
 
+    // HistorialCultivoRepository
+    List<Historial_Cultivo> findByCultivo_Agricultor_IdAndEstadoCultivo_DescripcionEstadoCultivoOrderByFechaInicioDesc(
+            Long agricultorId, String descripcion);
+
     void deleteAllByCultivo(Cultivo cultivo);
+
+
 }

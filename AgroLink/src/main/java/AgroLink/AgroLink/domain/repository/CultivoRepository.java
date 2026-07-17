@@ -12,6 +12,7 @@ import java.util.List;
 public interface CultivoRepository extends JpaRepository<Cultivo, Long>,
                                            JpaSpecificationExecutor<Cultivo> {
     List<Cultivo> findByAgricultor(Agricultor agricultor);
+    List<Cultivo> findByAgricultorId(Long agricultorId);
     List<Cultivo> findByAgricultorOrderByFechaSiembraDesc(Agricultor agricultor);
     List<Cultivo> findByEstadoCultivoDescripcionEstadoCultivoIn(
         java.util.Collection<String> descripciones);

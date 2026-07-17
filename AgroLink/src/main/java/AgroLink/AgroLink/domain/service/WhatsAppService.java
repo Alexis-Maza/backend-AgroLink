@@ -7,16 +7,18 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+
 @Service
 public class WhatsAppService {
 
-    @Value("${twilio.account.sid}")
+    @Value("${TWILIO_ACCOUNT_SID}")
     private String accountSid;
 
-    @Value("${twilio.auth.token}")
+    @Value("${TWILIO_AUTH_TOKEN}")
     private String authToken;
 
-    @Value("${twilio.whatsapp.from}")
+    @Value("${TWILIO_WHATSAPP_FROM}")
     private String whatsappFrom;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -58,6 +60,14 @@ public class WhatsAppService {
         String mensaje = String.format(
                 "Hola %s, tu pedido #%d (%s) en AgroLink fue cancelado por falta de disponibilidad. Motivo: %s",
                 nombreComprador, idPedido, producto, motivo);
+        enviar(toPhone, mensaje);
+    }
+
+    public void sendConfirmacionPedido(String toPhone, String nombreComprador, Long idPedido,
+                                       String resumenProductos, BigDecimal total) {
+        String mensaje = String.format(
+                "Hola %s, confirmamos tu pedido #%d en AgroLink. Productos: %s. Total: S/ %.2f. ¡Gracias por tu compra!",
+                nombreComprador, idPedido, resumenProductos, total);
         enviar(toPhone, mensaje);
     }
 }

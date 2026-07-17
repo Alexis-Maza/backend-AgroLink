@@ -19,4 +19,8 @@ public class VentaAgricultorDTO {
     private String lote;
     private String estado;
     private String direccionEntrega;
+    private String metodoPago;
+    private Integer porcentajeAdelanto;
+    private String montoAdelanto;
+    private String montoContraentrega;
 }
