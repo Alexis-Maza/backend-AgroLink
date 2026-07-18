@@ -80,7 +80,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "https://agrolink-frontend.onrender.com"));
+        config.setAllowedOrigins(List.of("http://localhost:3000", "https://agrolink-frontend.onrender.com", "https://main.d2nijnml0rnqki.amplifyapp.com/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
