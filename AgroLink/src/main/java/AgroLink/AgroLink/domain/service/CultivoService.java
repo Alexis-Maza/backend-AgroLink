@@ -3,17 +3,21 @@ package AgroLink.AgroLink.domain.service;
 import AgroLink.AgroLink.domain.dto.*;
 import AgroLink.AgroLink.domain.repository.AgricultorRepository;
 import AgroLink.AgroLink.domain.repository.CultivoRepository;
+import AgroLink.AgroLink.domain.repository.DetallePedidoRepository;
 import AgroLink.AgroLink.domain.repository.EtapaProductoVariedadRepository;
 import AgroLink.AgroLink.domain.repository.HistorialCultivoRepository;
 import AgroLink.AgroLink.domain.repository.EstadoCultivoRepository;
 import AgroLink.AgroLink.persistance.entity.*;
 import AgroLink.AgroLink.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +36,9 @@ public class CultivoService {
     private final AgricultorRepository agricultorRepository;
     private final UsuarioRepository usuarioRepository;
     private final EstadoCultivoRepository estadoCultivoRepository;
+    private final PedidoCancelacionService pedidoCancelacionService;
+    private final DetallePedidoRepository detallePedidoRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ── Sección 1: CRUD de Cultivos ────────────────────────────────────────
 
@@ -227,7 +234,6 @@ public class CultivoService {
 
     @Transactional
     public void actualizarEstadosDeCultivos() {
-        // Obtenemos cultivos activos (en estado 'Recién cultivado' o 'En crecimiento')
         List<Cultivo> cultivosActivos = cultivoRepository.findByEstadoCultivoDescripcionEstadoCultivoIn(
                 List.of("Recién cultivado", "En crecimiento")
         );
@@ -240,14 +246,12 @@ public class CultivoService {
                 Estado_Cultivo nuevoEstado = obtenerEstadoPorNombre(nuevoEstadoNombre);
                 cultivo.setEstadoCultivo(nuevoEstado);
 
-                // Cerrar la etapa activa anterior
                 historialCultivoRepository.findByCultivoAndFechaFinIsNull(cultivo)
                         .ifPresent(etapaAnterior -> {
                             etapaAnterior.setFechaFin(LocalDate.now());
                             historialCultivoRepository.save(etapaAnterior);
                         });
 
-                // Abrir nueva etapa
                 Historial_Cultivo nuevaEtapa = new Historial_Cultivo();
                 nuevaEtapa.setFechaInicio(LocalDate.now());
                 nuevaEtapa.setFechaFin(null);
@@ -255,9 +259,16 @@ public class CultivoService {
                 nuevaEtapa.setEstadoCultivo(nuevoEstado);
                 historialCultivoRepository.save(nuevaEtapa);
 
-                // Si es listo para cosechar, habilitar catálogo
                 if (nuevoEstadoNombre.equals("Listo para cosechar")) {
-                    cultivo.setDisponible(true);
+                    // --- NUEVO: notificación al agricultor ---
+                    NotificacionDTO notif = new NotificacionDTO(
+                            "historial-cultivo-" + nuevaEtapa.getId(),
+                            "CULTIVO_LISTO",
+                            "El cultivo del lote '" + cultivo.getLote() + "' superó su fecha estimada y ya está listo para cosechar",
+                            LocalDateTime.now(),
+                            cultivo.getId()
+                    );
+                    messagingTemplate.convertAndSend("/topic/agricultor/" + cultivo.getAgricultor().getId(), notif);
                 }
 
                 cultivoRepository.save(cultivo);
@@ -293,6 +304,16 @@ public class CultivoService {
 
                 if (nuevoEstadoNombre.equals("Listo para cosechar")) {
                     cultivo.setDisponible(true);
+
+                    // --- NUEVO: notificación al agricultor ---
+                    NotificacionDTO notif = new NotificacionDTO(
+                            "historial-cultivo-" + nuevaEtapa.getId(),
+                            "CULTIVO_LISTO",
+                            "El cultivo del lote '" + cultivo.getLote() + "' superó su fecha estimada y ya está listo para cosechar",
+                            LocalDateTime.now(),
+                            cultivo.getId()
+                    );
+                    messagingTemplate.convertAndSend("/topic/agricultor/" + cultivo.getAgricultor().getId(), notif);
                 }
 
                 cultivoRepository.save(cultivo);
@@ -324,6 +345,19 @@ public class CultivoService {
         }
     }
 
+    /**
+     * RF-AF-07: stock físico restante de un cultivo = lo no vendido (cantidadDisponible)
+     * más lo ya reservado en pedidos activos (Pendiente/En preparación) todavía no despachados.
+     */
+    private BigDecimal calcularStockTotalRestante(Cultivo cultivo) {
+        BigDecimal reservadoEnPedidosActivos = detallePedidoRepository
+                .findByCultivoAndPedido_EstadoPedido_DescripcionEstadoPedidoIn(cultivo, PedidoCancelacionService.ESTADOS_ACTIVOS)
+                .stream()
+                .map(DetallePedido::getCantidadSolicitada)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return cultivo.getCantidadDisponible().add(reservadoEnPedidosActivos);
+    }
+
     private CultivoResponse mapearCultivoAResponse(Cultivo cultivo) {
         Boolean alertaRetraso = historialCultivoRepository
                 .findByCultivoAndFechaFinIsNull(cultivo)
@@ -344,6 +378,8 @@ public class CultivoService {
             }
         }
 
+        BigDecimal stockTotalRestante = calcularStockTotalRestante(cultivo);
+
         return new CultivoResponse(
                 cultivo.getId(),
                 cultivo.getFechaSiembra(),
@@ -361,7 +397,8 @@ public class CultivoService {
                 cultivo.getCantidadEstimada(),
                 cultivo.getCantidadDisponible(),
                 cultivo.getUnidad(),
-                cultivo.getImagenUrl()
+                cultivo.getImagenUrl(),
+                stockTotalRestante
         );
     }
 
@@ -437,9 +474,14 @@ public class CultivoService {
                 .orElseThrow(() -> new RuntimeException("Cultivo no encontrado"));
         validarPropietario(cultivo, email);
 
-        // Validar que la cantidad perdida no sea mayor al stock disponible
-        if (request.getCantidadPerdida().compareTo(cultivo.getCantidadDisponible()) > 0) {
-            throw new RuntimeException("La cantidad perdida no puede ser mayor al stock disponible");
+        // El stock que una merma puede afectar incluye tanto lo no vendido (cantidadDisponible)
+        // como lo ya reservado en pedidos activos (Pendiente/En preparación) de este cultivo:
+        // una pérdida real (plaga, etc.) puede destruir producto ya comprometido con un comprador.
+        BigDecimal stockTotalRestante = calcularStockTotalRestante(cultivo);
+
+        if (request.getCantidadPerdida().compareTo(stockTotalRestante) > 0) {
+            throw new RuntimeException(
+                    "La cantidad perdida no puede ser mayor al stock total restante (disponible + reservado en pedidos activos)");
         }
 
         // Restar la merma del stock disponible
@@ -447,6 +489,74 @@ public class CultivoService {
                 .subtract(request.getCantidadPerdida());
         cultivo.setCantidadDisponible(nuevoStock);
 
-        return mapearCultivoAResponse(cultivoRepository.save(cultivo));
+        Cultivo cultivoGuardado = cultivoRepository.save(cultivo);
+
+        // RF-AF-07: cancelar pedidos activos que ya no tengan stock suficiente tras la merma.
+        // Se evalúa con el stock (posiblemente negativo) recién guardado: ese valor "de más"
+        // representa lo que la merma se comió del stock reservado en pedidos activos.
+        String motivo = "Cancelado por merma"
+                + (request.getCausa() != null && !request.getCausa().isBlank() ? ": " + request.getCausa() : "");
+        pedidoCancelacionService.evaluarCancelacionesPorCultivo(cultivoGuardado, motivo);
+
+        // Una vez canceladas las órdenes que ya no caben, no tiene sentido mostrarle al
+        // agricultor un stock disponible negativo: se normaliza a 0 para la vista.
+        if (cultivoGuardado.getCantidadDisponible().compareTo(BigDecimal.ZERO) < 0) {
+            cultivoGuardado.setCantidadDisponible(BigDecimal.ZERO);
+            cultivoGuardado = cultivoRepository.save(cultivoGuardado);
+        }
+
+        return mapearCultivoAResponse(cultivoGuardado);
+    }
+
+    @Transactional
+    public CultivoResponse confirmarCosecha(Long idCultivo, String email, BigDecimal volumenCosechado) {
+        Cultivo cultivo = cultivoRepository.findById(idCultivo)
+                .orElseThrow(() -> new RuntimeException("Cultivo no encontrado"));
+        validarPropietario(cultivo, email);
+
+        if (!cultivo.getEstadoCultivo().getDescripcionEstadoCultivo().equals("Listo para cosechar")) {
+            throw new RuntimeException("Solo se puede confirmar la cosecha de un cultivo en estado 'Listo para cosechar'");
+        }
+
+        if (volumenCosechado == null || volumenCosechado.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("El volumen cosechado debe ser mayor a cero");
+        }
+
+        // Calcular rendimiento: real vs estimado
+        BigDecimal rendimientoPorcentaje = cultivo.getCantidadEstimada() != null
+                && cultivo.getCantidadEstimada().compareTo(BigDecimal.ZERO) > 0
+                ? volumenCosechado.divide(cultivo.getCantidadEstimada(), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                : null;
+
+        // Cerrar la etapa activa
+        historialCultivoRepository.findByCultivoAndFechaFinIsNull(cultivo)
+                .ifPresent(etapaActiva -> {
+                    etapaActiva.setFechaFin(LocalDate.now());
+                    historialCultivoRepository.save(etapaActiva);
+                });
+
+        // Nuevo estado "Cosechado"
+        Estado_Cultivo estadoCosechado = obtenerEstadoPorNombre("Cosechado");
+        cultivo.setEstadoCultivo(estadoCosechado);
+
+        // Registrar la nueva etapa (cerrada de inmediato, ya que "Cosechado" es un punto final, no un rango activo)
+        Historial_Cultivo etapaCosecha = new Historial_Cultivo();
+        etapaCosecha.setFechaInicio(LocalDate.now());
+        etapaCosecha.setFechaFin(LocalDate.now());
+        etapaCosecha.setCultivo(cultivo);
+        etapaCosecha.setEstadoCultivo(estadoCosechado);
+        etapaCosecha.setObservaciones(
+                "Volumen cosechado: " + volumenCosechado + " " + cultivo.getUnidad()
+                        + (rendimientoPorcentaje != null ? " (Rendimiento: " + rendimientoPorcentaje + "% del estimado)" : "")
+        );
+        historialCultivoRepository.save(etapaCosecha);
+
+        // Ahora sí: volumen real disponible para venta
+        cultivo.setCantidadDisponible(volumenCosechado);
+        cultivo.setDisponible(true);
+        Cultivo guardado = cultivoRepository.save(cultivo);
+
+        return mapearCultivoAResponse(guardado);
     }
 }

@@ -26,6 +26,12 @@ public class DetallePedido {
     @Column(name = "direccion", length = 255)
     private String direccion;
 
+    @Column(name = "metodo_pago", length = 50)
+    private String metodoPago;
+
+    @Column(name = "porcentaje_adelanto")
+    private Integer porcentajeAdelanto;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_pedido", nullable = false)
     private Pedido pedido;

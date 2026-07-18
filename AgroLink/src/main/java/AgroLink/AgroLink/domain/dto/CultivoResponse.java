@@ -42,4 +42,8 @@ public class CultivoResponse {
     private BigDecimal cantidadDisponible;
     private String unidad;
     private String imagenUrl;
+
+    // RF-AF-07: disponible + lo reservado en pedidos activos (Pendiente/En preparación) de este cultivo.
+    // Es el tope real hasta el que se puede registrar una merma.
+    private BigDecimal stockTotalRestante;
 }

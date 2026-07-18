@@ -25,4 +25,18 @@ public interface DetallePedidoRepository extends JpaRepository<DetallePedido, Lo
      * @return Lista de DetallePedido vinculados a esos cultivos.
      */
     List<DetallePedido> findByCultivoIn(List<Cultivo> cultivos);
+
+    /**
+     * Obtiene las líneas de pedido de un cultivo cuyo Pedido está en alguno de los estados indicados.
+     * Usado para detectar, tras registrar una merma, qué pedidos activos dependen de ese cultivo.
+     *
+     * Spring traduce esto a:
+     * WHERE dp.id_cultivo = :cultivo AND p.id_estado_pedido IN (SELECT ... descripcion IN :estados)
+     *
+     * @param cultivo Cultivo cuyo stock cambió.
+     * @param estados Descripciones de los estados de pedido considerados "activos".
+     * @return Lista de DetallePedido de ese cultivo en pedidos activos.
+     */
+    List<DetallePedido> findByCultivoAndPedido_EstadoPedido_DescripcionEstadoPedidoIn(
+            Cultivo cultivo, List<String> estados);
 }

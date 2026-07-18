@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class PerfilAgricultorResponse {
 
+    private Long id;
+
     // Datos personales
     private String nombres;
     private String apellidoPaterno;

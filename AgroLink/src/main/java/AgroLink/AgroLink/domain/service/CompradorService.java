@@ -102,6 +102,9 @@ public class CompradorService {
                         pedido.getDetalles().stream()
                                 .map(d -> new PedidoResponseDTO.DetalleResponseDTO(
                                         d.getCultivo().getId(),
+                                        d.getCultivo().getProductoVariedad().getProducto() != null
+                                                ? d.getCultivo().getProductoVariedad().getProducto().getNombre()
+                                                : "—",
                                         d.getCultivo().getProductoVariedad().getNombreProductosVariedad(),
                                         d.getCantidadSolicitada(),
                                         d.getPrecioPactado(),

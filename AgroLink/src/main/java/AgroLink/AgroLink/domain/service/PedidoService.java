@@ -1,5 +1,6 @@
 package AgroLink.AgroLink.domain.service;
 
+import AgroLink.AgroLink.domain.dto.NotificacionDTO;
 import AgroLink.AgroLink.domain.dto.PedidoRequestDTO;
 import AgroLink.AgroLink.domain.dto.TimelineResponse;
 import AgroLink.AgroLink.domain.repository.CompradorRepository;
@@ -17,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 @Service
@@ -39,25 +42,20 @@ public class PedidoService {
     @Transactional
     public Pedido crearPedidoMasivo(PedidoRequestDTO request, String emailComprador) {
 
-        // 1. Obtener el comprador autenticado por email
         Comprador comprador = compradorRepository.findByUsuarioEmail(emailComprador)
                 .orElseThrow(() -> new RuntimeException("Comprador no encontrado para el email: " + emailComprador));
 
-        // 2. Obtener el estado "Pendiente"
         Estado_Pedido estadoPendiente = estadoPedidoRepository
                 .findByDescripcionEstadoPedidoIgnoreCase("Pendiente")
                 .orElseThrow(() -> new RuntimeException("Estado 'Pendiente' no encontrado en la base de datos"));
 
-        // 3. Crear el pedido cabecera
         Pedido pedido = new Pedido();
         pedido.setFechaCreacion(LocalDateTime.now());
         pedido.setComprador(comprador);
         pedido.setEstadoPedido(estadoPendiente);
         pedido.setDetalles(new ArrayList<>());
 
-        // 4. Crear los detalles por cada item del carrito
         for (PedidoRequestDTO.ItemCarritoDTO item : request.getItems()) {
-
             Cultivo cultivo = cultivoRepository.findById(item.getCultivoId())
                     .orElseThrow(() -> new RuntimeException("Cultivo no encontrado con id: " + item.getCultivoId()));
 
@@ -68,14 +66,38 @@ public class PedidoService {
             detalle.setDireccion(item.getDireccionEntrega());
             detalle.setPedido(pedido);
             detalle.setCultivo(cultivo);
-
             pedido.getDetalles().add(detalle);
         }
 
-        // 5. Guardar y retornar
-        return pedidoRepository.save(pedido);
-    }
+        Pedido pedidoGuardado = pedidoRepository.save(pedido);
 
+        // Primer punto del timeline (antes no existía)
+        HistorialEstadoPedido historialInicial = new HistorialEstadoPedido();
+        historialInicial.setPedido(pedidoGuardado);
+        historialInicial.setEstadoAnterior(null);
+        historialInicial.setEstadoNuevo(estadoPendiente);
+        historialInicial.setEtapa("Pedido creado por el comprador");
+        historialInicial.setUsuarioAccion(comprador.getUsuario());
+        historialEstadoPedidoRepository.save(historialInicial);
+
+        // Notificar a cada agricultor involucrado (evita duplicados si el carrito tiene varios cultivos del mismo agricultor)
+        Set<Long> agricultoresNotificados = new HashSet<>();
+        for (DetallePedido detalle : pedidoGuardado.getDetalles()) {
+            Long idAgricultor = detalle.getCultivo().getAgricultor().getId();
+            if (agricultoresNotificados.add(idAgricultor)) {
+                NotificacionDTO notif = new NotificacionDTO(
+                        "historial-" + historialInicial.getIdHistorial(),
+                        "PEDIDO_RECIBIDO",
+                        "Recibiste un nuevo pedido #" + pedidoGuardado.getId(),
+                        historialInicial.getFechaRegistro(),
+                        pedidoGuardado.getId()
+                );
+                messagingTemplate.convertAndSend("/topic/agricultor/" + idAgricultor, notif);
+            }
+        }
+
+        return pedidoGuardado;
+    }
     // ── Nuevo método: obtener timeline del historial de estados ──────────────
 
     /**

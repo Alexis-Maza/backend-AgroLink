@@ -8,7 +8,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/cultivos")
@@ -101,5 +103,16 @@ public class CultivoController {
         return ResponseEntity.ok(
                 cultivoService.registrarMerma(id, userDetails.getUsername(), request)
         );
+    }
+
+    @PostMapping("/{id}/cosechar")
+    public ResponseEntity<CultivoResponse> confirmarCosecha(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, BigDecimal> body) {
+
+        BigDecimal volumenCosechado = body.get("volumenCosechado");
+        CultivoResponse response = cultivoService.confirmarCosecha(id, userDetails.getUsername(), volumenCosechado);
+        return ResponseEntity.ok(response);
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity   // Habilita @PreAuthorize / @PostAuthorize en controladores
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -53,6 +55,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
                         .requestMatchers("/ws-agrolink/**").permitAll()
+
+                        // Trazabilidad: accesible por AGRICULTOR (su cultivo) y COMPRADOR (catálogo)
+                        .requestMatchers("/api/v1/trazabilidad/**").hasAnyAuthority("AGRICULTOR", "COMPRADOR")
 
                         // Historial de pedidos: accesible por AGRICULTOR y COMPRADOR
                         .requestMatchers("/api/v1/pedidos/**").hasAnyAuthority("AGRICULTOR", "COMPRADOR")
